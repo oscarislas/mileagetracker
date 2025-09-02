@@ -1,0 +1,61 @@
+# Build stage
+FROM golang:1.23-alpine AS builder
+
+# Install curl for downloading Air binary
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Development stage  
+FROM golang:1.23-alpine AS development
+
+# Install git and ca-certificates, then install air
+RUN apk add --no-cache git ca-certificates && \
+    go install github.com/air-verse/air@v1.52.3
+
+WORKDIR /app
+
+# Copy go mod files and download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Default command for development
+CMD ["air", "-c", ".air.toml"]
+
+# Production build stage
+FROM builder AS production-builder
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/server
+
+# Production stage
+FROM alpine:latest AS production
+
+# Install ca-certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+# Copy the binary from builder
+COPY --from=production-builder /app/main .
+
+# Copy migrations
+COPY --from=production-builder /app/migrations ./migrations
+
+# Expose port
+EXPOSE 8080
+
+# Run the binary
+CMD ["./main"]

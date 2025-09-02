@@ -1,0 +1,113 @@
+openapi: 3.0.3
+info:
+  title: Mileage Tracker API
+  description: API for tracking vehicle mileage and expenses
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@mileagetracker.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.mileagetracker.com
+    description: Production server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Check if the service is healthy
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /ready:
+    get:
+      summary: Readiness check
+      description: Check if the service is ready to serve requests
+      operationId: readinessCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+
+  /api/v1/date:
+    get:
+      summary: Current date endpoint
+      description: Get the current date from the server
+      operationId: getCurrentDate
+      tags:
+        - Test
+      responses:
+        '200':
+          description: Current date response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DateResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          example: healthy
+        uptime:
+          type: string
+          example: "2h30m"
+
+    ReadinessResponse:
+      type: object
+      required:
+        - status
+        - services
+      properties:
+        status:
+          type: string
+          example: ready
+        services:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            database: healthy
+
+    DateResponse:
+      type: object
+      required:
+        - date
+        - formatted_date
+      properties:
+        date:
+          type: string
+          format: date-time
+          example: "2024-01-01T12:00:00Z"
+        formatted_date:
+          type: string
+          example: "January 1, 2024"
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Test
+    description: Test endpoints

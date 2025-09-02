@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mileagetracker-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-mileagetracker}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-mileagetracker}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.air
+      target: development
+    container_name: mileagetracker-backend
+    environment:
+      - GIN_MODE=${GIN_MODE:-debug}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_NAME=${DB_NAME:-mileagetracker}
+      - DB_SSLMODE=${DB_SSLMODE:-disable}
+      - SERVER_PORT=${SERVER_PORT:-8080}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+    ports:
+      - "0.0.0.0:${SERVER_PORT:-8080}:8080"
+    volumes:
+      - ./backend:/app
+      - go_cache:/go/pkg/mod
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: mileagetracker-frontend
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8080}
+    ports:
+      - "0.0.0.0:${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  go_cache:

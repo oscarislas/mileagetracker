@@ -40,6 +40,29 @@ describe('dateUtils', () => {
       expect(formatTripDateRelative(todayString)).toBe('Today');
     });
 
+    it('should handle various date strings that could cause "Today" bug', () => {
+      // Test dates that should NOT be "Today"
+      const nonTodayDates = [
+        '2024-01-01',
+        '2024-06-15', 
+        '2024-12-31',
+        '2025-01-01',
+        '2025-03-15'
+      ];
+
+      nonTodayDates.forEach(dateString => {
+        const result = formatTripDateRelative(dateString);
+        
+        // Unless today happens to be one of these exact dates, 
+        // the result should not be "Today"
+        const todayString = getTodayDateString();
+        if (dateString !== todayString) {
+          expect(result).not.toBe('Today');
+          expect(result).not.toBe('Invalid Date');
+        }
+      });
+    });
+
     it('should return "Yesterday" for yesterday\'s date', () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
@@ -74,6 +97,23 @@ describe('dateUtils', () => {
 
     it('should handle invalid dates gracefully', () => {
       expect(formatTripDateRelative('invalid')).toBe('Invalid Date');
+    });
+
+    it('should properly compare dates ignoring time components', () => {
+      // Test that time part of ISO dates doesn't affect date comparison
+      const todayDate = new Date();
+      const todayDateString = todayDate.toISOString().split('T')[0];
+      
+      // Create ISO timestamps for same day with different times
+      const morningIso = `${todayDateString}T08:00:00Z`;
+      const eveningIso = `${todayDateString}T20:00:00Z`;
+      
+      // Both should resolve to "Today" regardless of time
+      expect(formatTripDateRelative(morningIso)).toBe('Today');
+      expect(formatTripDateRelative(eveningIso)).toBe('Today');
+      
+      // Also test that plain date string works
+      expect(formatTripDateRelative(todayDateString)).toBe('Today');
     });
   });
 
@@ -211,6 +251,53 @@ describe('dateUtils', () => {
       } finally {
         Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
       }
+    });
+
+    it('should handle ISO timestamp formats correctly', () => {
+      const isoTimestamps = [
+        '2024-06-15T10:00:00Z',
+        '2024-06-15T10:00:00.000Z',
+        '2024-06-15T23:59:59Z',
+        '2024-06-15T00:00:00Z'
+      ];
+
+      isoTimestamps.forEach(timestamp => {
+        const formatted = formatTripDate(timestamp);
+        const relative = formatTripDateRelative(timestamp);
+        
+        expect(formatted).toBe('Jun 15, 2024');
+        expect(formatted).not.toBe('Invalid Date');
+        expect(relative).not.toBe('Invalid Date');
+        
+        // Should not show as Today if it's not today
+        if (!timestamp.startsWith(getTodayDateString())) {
+          expect(relative).not.toBe('Today');
+        }
+      });
+    });
+
+    it('should specifically test for the reported bug: no dates should always show "Today"', () => {
+      // Test a variety of dates that were definitely NOT today
+      const differentDates = [
+        '2024-01-15', // Past date from different year
+        '2025-01-15', // Past date from current year
+        '2023-12-25', // Christmas past year
+        '2025-12-25'  // Future date (Christmas this year)
+      ];
+
+      const results = differentDates.map(date => formatTripDateRelative(date));
+      
+      // At most ONE of these should be "Today" (and only if today is Christmas 2025)
+      const todayCount = results.filter(result => result === 'Today').length;
+      expect(todayCount).toBeLessThanOrEqual(1);
+      
+      // Ensure we're getting proper formatting for non-today dates
+      results.forEach((result) => {
+        if (result !== 'Today' && result !== 'Yesterday') {
+          expect(result).toMatch(/\w+ \d+/); // Should match "Jan 15" or "Jan 15, 2024" pattern
+          expect(result).not.toBe('Invalid Date');
+        }
+      });
     });
   });
 });

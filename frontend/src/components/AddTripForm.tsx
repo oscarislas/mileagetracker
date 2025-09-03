@@ -4,13 +4,12 @@ import { useCreateTrip } from '../hooks/useTrips'
 import { useClientSuggestions } from '../hooks/useClients'
 import { useConnectionStatus } from '../hooks/useConnectionStatus'
 import { getApiErrorMessage } from '../utils/errorUtils'
-import { getTodayDateString } from '../utils/dateUtils'
 import type { CreateTripRequest, FormErrors } from '../types'
 
 export default function AddTripForm() {
   const [formData, setFormData] = useState<CreateTripRequest>({
     client_name: '',
-    trip_date: getTodayDateString(), // Today's date
+    trip_date: '', // Empty by default to encourage user selection
     miles: 0,
     notes: ''
   })
@@ -69,7 +68,7 @@ export default function AddTripForm() {
       onSuccess: () => {
         setFormData({
           client_name: '',
-          trip_date: getTodayDateString(),
+          trip_date: '', // Empty to encourage date selection for next trip
           miles: 0,
           notes: ''
         })
@@ -174,7 +173,7 @@ export default function AddTripForm() {
         {/* Trip Date */}
         <div>
           <label htmlFor="trip_date" className="block text-sm font-medium text-ctp-text mb-2">
-            Trip Date
+            Trip Date <span className="text-ctp-red">*</span>
           </label>
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-ctp-subtext1" />
@@ -183,11 +182,19 @@ export default function AddTripForm() {
               id="trip_date"
               value={formData.trip_date}
               onChange={(e) => setFormData({ ...formData, trip_date: e.target.value })}
-              className="w-full pl-10 pr-4 py-3 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
+              className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent ${
+                errors.trip_date ? 'border-ctp-red' : 'border-ctp-surface1'
+              }`}
+              placeholder="Select trip date"
             />
           </div>
           {errors.trip_date && (
             <p className="text-ctp-red text-sm mt-1">{errors.trip_date}</p>
+          )}
+          {!formData.trip_date && !errors.trip_date && (
+            <p className="text-ctp-subtext1 text-xs mt-1">
+              💡 Select the date when your trip occurred
+            </p>
           )}
         </div>
 

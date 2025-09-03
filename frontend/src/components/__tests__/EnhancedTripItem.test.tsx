@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { vi, describe, it, expect } from 'vitest'
 import EnhancedTripItem from '../EnhancedTripItem'
 import type { Trip } from '../../types'
+import { getTodayDateString } from '../../utils/dateUtils'
 
 // Mock the hooks
 vi.mock('../../hooks/useTrips', () => ({
@@ -12,7 +13,7 @@ vi.mock('../../hooks/useTrips', () => ({
 }))
 
 const mockTrip: Trip = {
-  id: '1',
+  id: 1,
   client_name: 'Test Client',
   trip_date: '2024-01-15',
   miles: 25.5,
@@ -91,5 +92,62 @@ describe('EnhancedTripItem', () => {
     expect(deleteButton).toHaveClass('text-ctp-red')
     expect(editButton).toHaveClass('touch-manipulation')
     expect(deleteButton).toHaveClass('touch-manipulation')
+  })
+
+  describe('date display', () => {
+    it('displays relative date for past dates correctly', () => {
+      const pastTrip = { ...mockTrip, trip_date: '2024-01-15' }
+      render(<EnhancedTripItem trip={pastTrip} />)
+      
+      // Should show formatted date since it's in the past
+      expect(screen.getByText('Jan 15, 2024')).toBeInTheDocument()
+    })
+
+    it('displays "Today" for today\'s date', () => {
+      const todaysTrip = { 
+        ...mockTrip, 
+        trip_date: getTodayDateString() 
+      }
+      render(<EnhancedTripItem trip={todaysTrip} />)
+      
+      expect(screen.getByText('Today')).toBeInTheDocument()
+    })
+
+    it('displays "Yesterday" for yesterday\'s date', () => {
+      const yesterday = new Date()
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayTrip = { 
+        ...mockTrip, 
+        trip_date: yesterday.toISOString().split('T')[0]
+      }
+      render(<EnhancedTripItem trip={yesterdayTrip} />)
+      
+      expect(screen.getByText('Yesterday')).toBeInTheDocument()
+    })
+
+    it('displays formatted date for dates from earlier this year', () => {
+      const earlyThisYear = '2025-01-15'
+      const earlyTrip = { ...mockTrip, trip_date: earlyThisYear }
+      render(<EnhancedTripItem trip={earlyTrip} />)
+      
+      // Should show month and day without year for current year dates
+      expect(screen.getByText('Jan 15')).toBeInTheDocument()
+    })
+
+    it('displays formatted date with year for different year dates', () => {
+      const differentYearTrip = { ...mockTrip, trip_date: '2023-06-20' }
+      render(<EnhancedTripItem trip={differentYearTrip} />)
+      
+      // Should show month, day and year for different year dates
+      expect(screen.getByText('Jun 20, 2023')).toBeInTheDocument()
+    })
+
+    it('handles ISO timestamp format dates correctly', () => {
+      const isoDateTrip = { ...mockTrip, trip_date: '2025-01-15T10:00:00Z' }
+      render(<EnhancedTripItem trip={isoDateTrip} />)
+      
+      // Should extract date part and format correctly
+      expect(screen.getByText('Jan 15')).toBeInTheDocument()
+    })
   })
 })

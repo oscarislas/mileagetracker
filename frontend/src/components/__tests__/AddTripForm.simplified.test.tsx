@@ -61,12 +61,14 @@ describe('AddTripForm - Core Functionality', () => {
     expect(screen.getByRole('button', { name: /add trip/i })).toBeInTheDocument()
   })
 
-  it('sets today as default date', () => {
+  it('starts with empty date to encourage user selection', () => {
     renderWithQueryClient(<AddTripForm />)
     
     const dateInput = screen.getByLabelText(/trip date/i) as HTMLInputElement
-    const today = new Date().toISOString().split('T')[0]
-    expect(dateInput.value).toBe(today)
+    expect(dateInput.value).toBe('')
+    
+    // Should show helpful hint text
+    expect(screen.getByText(/select the date when your trip occurred/i)).toBeInTheDocument()
   })
 
   it('validates required client name', async () => {

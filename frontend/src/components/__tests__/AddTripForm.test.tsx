@@ -92,8 +92,15 @@ describe('AddTripForm', () => {
     const user = userEvent.setup()
     renderWithProviders(<AddTripForm />)
     
-    const clientNameInput = screen.getByRole('textbox', { name: /client name/i })
-    await user.type(clientNameInput, 'A'.repeat(31)) // 31 characters, over limit
+    const clientNameInput = screen.getByRole('textbox', { name: /client name/i }) as HTMLInputElement
+    
+    // Remove maxlength restriction temporarily to test validation
+    clientNameInput.removeAttribute('maxlength')
+    
+    // Type 31 characters to trigger validation
+    const longName = 'A'.repeat(31)
+    await user.clear(clientNameInput)
+    await user.type(clientNameInput, longName)
     
     const submitButton = screen.getByRole('button', { name: /add trip/i })
     await user.click(submitButton)
@@ -122,12 +129,14 @@ describe('AddTripForm', () => {
     })
   })
 
-  it('sets today as default trip date', () => {
+  it('starts with empty trip date to encourage user selection', () => {
     renderWithProviders(<AddTripForm />)
     
     const dateInput = screen.getByLabelText(/trip date/i) as HTMLInputElement
-    const today = new Date().toISOString().split('T')[0]
-    expect(dateInput.value).toBe(today)
+    expect(dateInput.value).toBe('')
+    
+    // Should show helpful hint text when date is empty
+    expect(screen.getByText(/select the date when your trip occurred/i)).toBeInTheDocument()
   })
 
   it('can be collapsed and expanded', async () => {

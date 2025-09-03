@@ -4,7 +4,6 @@ import {
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 import QuickAddTrip from '../components/QuickAddTrip'
-import SummaryCard from '../components/SummaryCard'
 import TripsList from '../components/TripsList'
 import { StatsOverviewSkeleton } from '../components/LoadingSkeletons'
 import { useTrips } from '../hooks/useTrips'
@@ -211,33 +210,24 @@ export default function EnhancedTripsPage() {
         </div>
       )}
 
-      {/* Main content area with responsive layout */}
-      <div className="lg:grid lg:grid-cols-12 lg:gap-6">
-        
-        {/* Main content - trips list */}
-        <div className="lg:col-span-8 space-y-4">
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-ctp-text flex items-center gap-2">
-              {appliedFilters.searchQuery || appliedFilters.dateRange || appliedFilters.clientFilter || appliedFilters.milesRange ? 'Filtered Trips' : 'Recent Trips'}
-              {(appliedFilters.searchQuery || appliedFilters.dateRange || appliedFilters.clientFilter || appliedFilters.milesRange) && (
-                <span className="text-xs bg-ctp-blue/20 text-ctp-blue px-2 py-1 rounded-full">
-                  {tripsData?.total || 0} results
-                </span>
-              )}
-            </h2>
-            
-            <TripsList 
-              enhanced={true} 
-              showPagination={false} 
-              limit={5}
-              filters={appliedFilters}
-            />
-          </div>
-        </div>
-
-        {/* Sidebar - summary on desktop, below content on mobile */}
-        <div className="lg:col-span-4 space-y-4 mt-6 lg:mt-0">
-          <SummaryCard />
+      {/* Main content - trips list */}
+      <div className="space-y-4">
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-ctp-text flex items-center gap-2">
+            {appliedFilters.searchQuery || appliedFilters.dateRange || appliedFilters.clientFilter || appliedFilters.milesRange ? 'Filtered Trips' : 'Recent Trips'}
+            {(appliedFilters.searchQuery || appliedFilters.dateRange || appliedFilters.clientFilter || appliedFilters.milesRange) && (
+              <span className="text-xs bg-ctp-blue/20 text-ctp-blue px-2 py-1 rounded-full">
+                {tripsData?.total || 0} results
+              </span>
+            )}
+          </h2>
+          
+          <TripsList 
+            enhanced={true} 
+            showPagination={false} 
+            limit={5}
+            filters={appliedFilters}
+          />
         </div>
       </div>
     </div>

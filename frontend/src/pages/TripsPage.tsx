@@ -1,5 +1,4 @@
 import AddTripForm from '../components/AddTripForm'
-import SummaryCard from '../components/SummaryCard'
 import TripsList from '../components/TripsList'
 
 export default function TripsPage() {
@@ -11,7 +10,6 @@ export default function TripsPage() {
       </div>
       
       <AddTripForm />
-      <SummaryCard />
       <TripsList />
     </div>
   )

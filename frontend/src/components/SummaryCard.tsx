@@ -102,12 +102,6 @@ export default function SummaryCard() {
             <p className="text-ctp-subtext1 text-xs mb-4">
               Start tracking your business mileage to see tax deductions
             </p>
-            <div className="bg-ctp-base rounded-lg p-3 max-w-sm mx-auto">
-              <p className="text-xs text-ctp-subtext1 mb-1">💡 <strong className="text-ctp-text">Tip:</strong></p>
-              <p className="text-xs text-ctp-subtext1">
-                Use the "Quick Add" form above to record your first business trip
-              </p>
-            </div>
           </div>
         ) : (
           summary.months.map((month) => (

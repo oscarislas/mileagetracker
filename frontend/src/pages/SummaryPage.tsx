@@ -4,7 +4,6 @@ import {
   CurrencyDollarIcon, 
   TruckIcon, 
   CalendarIcon,
-  UserGroupIcon,
   ArrowTrendingUpIcon,
   ExclamationTriangleIcon,
   WifiIcon
@@ -94,14 +93,6 @@ function MonthlyBreakdown({ summaryData }: MonthlyBreakdownProps) {
           <p className="text-ctp-subtext1 text-sm mb-4">
             Start tracking your business mileage to see monthly statistics
           </p>
-          <div className="bg-ctp-base rounded-lg p-4 max-w-sm mx-auto">
-            <p className="text-sm text-ctp-subtext1 mb-1">
-              <strong className="text-ctp-text">💡 Tip:</strong>
-            </p>
-            <p className="text-sm text-ctp-subtext1">
-              Use the "Trips" tab to add your first business trip and watch your tax deductions grow
-            </p>
-          </div>
         </div>
       </div>
     )
@@ -291,44 +282,6 @@ export default function SummaryPage() {
       
       <MonthlyBreakdown summaryData={summaryData} />
 
-      {hasData && (
-        <div className="bg-ctp-surface0 rounded-lg p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-ctp-text mb-4 flex items-center gap-2">
-            <UserGroupIcon className="h-5 w-5 text-ctp-sapphire" />
-            Quick Tips
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-ctp-base rounded-lg p-4">
-              <h3 className="font-medium text-ctp-text mb-2">📊 Track Consistently</h3>
-              <p className="text-sm text-ctp-subtext1">
-                Regular tracking helps maximize your tax deductions and provides better insights
-              </p>
-            </div>
-            
-            <div className="bg-ctp-base rounded-lg p-4">
-              <h3 className="font-medium text-ctp-text mb-2">💡 IRS Guidelines</h3>
-              <p className="text-sm text-ctp-subtext1">
-                Keep detailed records including date, destination, business purpose, and mileage
-              </p>
-            </div>
-            
-            <div className="bg-ctp-base rounded-lg p-4">
-              <h3 className="font-medium text-ctp-text mb-2">🔧 Settings</h3>
-              <p className="text-sm text-ctp-subtext1">
-                Update your mileage rate in Settings to match current IRS rates
-              </p>
-            </div>
-            
-            <div className="bg-ctp-base rounded-lg p-4">
-              <h3 className="font-medium text-ctp-text mb-2">📱 Mobile Friendly</h3>
-              <p className="text-sm text-ctp-subtext1">
-                Add trips on-the-go using the mobile-optimized interface
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

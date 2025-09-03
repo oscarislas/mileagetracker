@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/oscar/mileagetracker/internal/domain"
@@ -11,21 +12,22 @@ import (
 )
 
 func TestClientService_GetOrCreateClient(t *testing.T) {
-	mockClientRepo := new(MockClientRepository)
-	clientService := service.NewClientService(mockClientRepo)
 
 	t.Run("should return existing client", func(t *testing.T) {
 		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
+
 		expectedClient := &domain.Client{
 			ID:   1,
 			Name: "Existing Client",
 		}
 
 		// Mock expectations
-		mockClientRepo.On("FindByName", "Existing Client").Return(expectedClient, nil)
+		mockClientRepo.On("FindByName", mock.Anything, "Existing Client").Return(expectedClient, nil)
 
 		// Execute
-		result, err := clientService.GetOrCreateClient("Existing Client")
+		result, err := clientService.GetOrCreateClient(context.Background(), "Existing Client")
 
 		// Assert
 		assert.NoError(t, err)
@@ -37,16 +39,19 @@ func TestClientService_GetOrCreateClient(t *testing.T) {
 	})
 
 	t.Run("should create new client when not found", func(t *testing.T) {
+		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
 
 		// Mock expectations
-		mockClientRepo.On("FindByName", "New Client").Return(nil, gorm.ErrRecordNotFound)
-		mockClientRepo.On("Create", mock.AnythingOfType("*domain.Client")).Return(nil).Run(func(args mock.Arguments) {
-			client := args.Get(0).(*domain.Client)
+		mockClientRepo.On("FindByName", mock.Anything, "New Client").Return(nil, gorm.ErrRecordNotFound)
+		mockClientRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.Client")).Return(nil).Run(func(args mock.Arguments) {
+			client := args.Get(1).(*domain.Client)
 			client.ID = 2 // Simulate database assigning ID
 		})
 
 		// Execute
-		result, err := clientService.GetOrCreateClient("New Client")
+		result, err := clientService.GetOrCreateClient(context.Background(), "New Client")
 
 		// Assert
 		assert.NoError(t, err)
@@ -58,8 +63,12 @@ func TestClientService_GetOrCreateClient(t *testing.T) {
 	})
 
 	t.Run("should return error for empty name", func(t *testing.T) {
+		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
+
 		// Execute
-		result, err := clientService.GetOrCreateClient("")
+		result, err := clientService.GetOrCreateClient(context.Background(), "")
 
 		// Assert
 		assert.Error(t, err)
@@ -68,8 +77,12 @@ func TestClientService_GetOrCreateClient(t *testing.T) {
 	})
 
 	t.Run("should return error for whitespace-only name", func(t *testing.T) {
+		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
+
 		// Execute
-		result, err := clientService.GetOrCreateClient("   ")
+		result, err := clientService.GetOrCreateClient(context.Background(), "   ")
 
 		// Assert
 		assert.Error(t, err)
@@ -79,14 +92,16 @@ func TestClientService_GetOrCreateClient(t *testing.T) {
 
 	t.Run("should handle database error during creation", func(t *testing.T) {
 		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
 		dbError := gorm.ErrInvalidDB
 
 		// Mock expectations
-		mockClientRepo.On("FindByName", "Test Client").Return(nil, gorm.ErrRecordNotFound)
-		mockClientRepo.On("Create", mock.AnythingOfType("*domain.Client")).Return(dbError)
+		mockClientRepo.On("FindByName", mock.Anything, "Test Client").Return(nil, gorm.ErrRecordNotFound)
+		mockClientRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.Client")).Return(dbError)
 
 		// Execute
-		result, err := clientService.GetOrCreateClient("Test Client")
+		result, err := clientService.GetOrCreateClient(context.Background(), "Test Client")
 
 		// Assert
 		assert.Error(t, err)
@@ -98,13 +113,15 @@ func TestClientService_GetOrCreateClient(t *testing.T) {
 
 	t.Run("should handle unexpected database error during lookup", func(t *testing.T) {
 		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
 		dbError := gorm.ErrInvalidDB
 
 		// Mock expectations
-		mockClientRepo.On("FindByName", "Test Client").Return(nil, dbError)
+		mockClientRepo.On("FindByName", mock.Anything, "Test Client").Return(nil, dbError)
 
 		// Execute
-		result, err := clientService.GetOrCreateClient("Test Client")
+		result, err := clientService.GetOrCreateClient(context.Background(), "Test Client")
 
 		// Assert
 		assert.Error(t, err)
@@ -120,21 +137,21 @@ type MockClientRepository struct {
 	mock.Mock
 }
 
-func (m *MockClientRepository) Create(client *domain.Client) error {
-	args := m.Called(client)
+func (m *MockClientRepository) Create(ctx context.Context, client *domain.Client) error {
+	args := m.Called(ctx, client)
 	return args.Error(0)
 }
 
-func (m *MockClientRepository) FindByName(name string) (*domain.Client, error) {
-	args := m.Called(name)
+func (m *MockClientRepository) FindByName(ctx context.Context, name string) (*domain.Client, error) {
+	args := m.Called(ctx, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*domain.Client), args.Error(1)
 }
 
-func (m *MockClientRepository) GetSuggestions(query string, limit int) ([]domain.Client, error) {
-	args := m.Called(query, limit)
+func (m *MockClientRepository) GetSuggestions(ctx context.Context, query string, limit int) ([]domain.Client, error) {
+	args := m.Called(ctx, query, limit)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -142,21 +159,22 @@ func (m *MockClientRepository) GetSuggestions(query string, limit int) ([]domain
 }
 
 func TestClientService_GetSuggestions(t *testing.T) {
-	mockClientRepo := new(MockClientRepository)
-	clientService := service.NewClientService(mockClientRepo)
 
 	t.Run("should return suggestions for valid query", func(t *testing.T) {
 		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
+
 		expectedClients := []domain.Client{
 			{ID: 1, Name: "Acme Corp"},
 			{ID: 2, Name: "ABC Company"},
 		}
 
 		// Mock expectations
-		mockClientRepo.On("GetSuggestions", "Ac", 10).Return(expectedClients, nil)
+		mockClientRepo.On("GetSuggestions", mock.Anything, "Ac", 10).Return(expectedClients, nil)
 
 		// Execute
-		result, err := clientService.GetSuggestions("Ac")
+		result, err := clientService.GetSuggestions(context.Background(), "Ac")
 
 		// Assert
 		assert.NoError(t, err)
@@ -168,8 +186,12 @@ func TestClientService_GetSuggestions(t *testing.T) {
 	})
 
 	t.Run("should return empty slice for empty query", func(t *testing.T) {
+		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
+
 		// Execute
-		result, err := clientService.GetSuggestions("")
+		result, err := clientService.GetSuggestions(context.Background(), "")
 
 		// Assert
 		assert.NoError(t, err)
@@ -177,8 +199,12 @@ func TestClientService_GetSuggestions(t *testing.T) {
 	})
 
 	t.Run("should return empty slice for whitespace-only query", func(t *testing.T) {
+		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
+
 		// Execute
-		result, err := clientService.GetSuggestions("   ")
+		result, err := clientService.GetSuggestions(context.Background(), "   ")
 
 		// Assert
 		assert.NoError(t, err)
@@ -187,13 +213,15 @@ func TestClientService_GetSuggestions(t *testing.T) {
 
 	t.Run("should handle database error", func(t *testing.T) {
 		// Setup
+		mockClientRepo := new(MockClientRepository)
+		clientService := service.NewClientService(mockClientRepo)
 		dbError := gorm.ErrInvalidDB
 
 		// Mock expectations
-		mockClientRepo.On("GetSuggestions", "test", 10).Return(nil, dbError)
+		mockClientRepo.On("GetSuggestions", mock.Anything, "test", 10).Return(nil, dbError)
 
 		// Execute
-		result, err := clientService.GetSuggestions("test")
+		result, err := clientService.GetSuggestions(context.Background(), "test")
 
 		// Assert
 		assert.Error(t, err)
@@ -202,30 +230,4 @@ func TestClientService_GetSuggestions(t *testing.T) {
 
 		mockClientRepo.AssertExpectations(t)
 	})
-}
-
-// MockClientRepository implements the ClientRepository interface for testing
-type MockClientRepository struct {
-	mock.Mock
-}
-
-func (m *MockClientRepository) Create(client *domain.Client) error {
-	args := m.Called(client)
-	return args.Error(0)
-}
-
-func (m *MockClientRepository) FindByName(name string) (*domain.Client, error) {
-	args := m.Called(name)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*domain.Client), args.Error(1)
-}
-
-func (m *MockClientRepository) GetSuggestions(query string, limit int) ([]domain.Client, error) {
-	args := m.Called(query, limit)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).([]domain.Client), args.Error(1)
 }

@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -11,85 +12,84 @@ import (
 	"gorm.io/gorm"
 )
 
-
 // Mock repositories
 type MockTripRepository struct {
 	mock.Mock
 }
 
-func (m *MockTripRepository) Create(trip *domain.Trip) error {
-	args := m.Called(trip)
+func (m *MockTripRepository) Create(ctx context.Context, trip *domain.Trip) error {
+	args := m.Called(ctx, trip)
 	return args.Error(0)
 }
 
-func (m *MockTripRepository) Update(trip *domain.Trip) error {
-	args := m.Called(trip)
+func (m *MockTripRepository) Update(ctx context.Context, trip *domain.Trip) error {
+	args := m.Called(ctx, trip)
 	return args.Error(0)
 }
 
-func (m *MockTripRepository) Delete(id uint) error {
-	args := m.Called(id)
+func (m *MockTripRepository) Delete(ctx context.Context, id uint) error {
+	args := m.Called(ctx, id)
 	return args.Error(0)
 }
 
-func (m *MockTripRepository) FindByID(id uint) (*domain.Trip, error) {
-	args := m.Called(id)
+func (m *MockTripRepository) FindByID(ctx context.Context, id uint) (*domain.Trip, error) {
+	args := m.Called(ctx, id)
 	return args.Get(0).(*domain.Trip), args.Error(1)
 }
 
-func (m *MockTripRepository) GetPaginated(page, limit int) ([]domain.Trip, int64, error) {
-	args := m.Called(page, limit)
+func (m *MockTripRepository) GetPaginated(ctx context.Context, page, limit int) ([]domain.Trip, int64, error) {
+	args := m.Called(ctx, page, limit)
 	return args.Get(0).([]domain.Trip), args.Get(1).(int64), args.Error(2)
 }
 
-func (m *MockTripRepository) GetMonthlySummary(startDate, endDate string) ([]domain.MonthlySummary, error) {
-	args := m.Called(startDate, endDate)
+func (m *MockTripRepository) GetMonthlySummary(ctx context.Context, startDate, endDate string) ([]domain.MonthlySummary, error) {
+	args := m.Called(ctx, startDate, endDate)
 	return args.Get(0).([]domain.MonthlySummary), args.Error(1)
 }
 
-type MockClientService struct {
+type MockTripClientService struct {
 	mock.Mock
 }
 
-func (m *MockClientService) GetOrCreateClient(name string) (*domain.Client, error) {
-	args := m.Called(name)
+func (m *MockTripClientService) GetOrCreateClient(ctx context.Context, name string) (*domain.Client, error) {
+	args := m.Called(ctx, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*domain.Client), args.Error(1)
 }
 
-func (m *MockClientService) GetSuggestions(query string) ([]domain.Client, error) {
-	args := m.Called(query)
+func (m *MockTripClientService) GetSuggestions(ctx context.Context, query string) ([]domain.Client, error) {
+	args := m.Called(ctx, query)
 	return args.Get(0).([]domain.Client), args.Error(1)
 }
 
-type MockSettingsRepository struct {
+type MockTripSettingsRepository struct {
 	mock.Mock
 }
 
-func (m *MockSettingsRepository) GetByKey(key string) (*domain.Settings, error) {
-	args := m.Called(key)
+func (m *MockTripSettingsRepository) GetByKey(ctx context.Context, key string) (*domain.Settings, error) {
+	args := m.Called(ctx, key)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*domain.Settings), args.Error(1)
 }
 
-func (m *MockSettingsRepository) UpdateByKey(key, value string) error {
-	args := m.Called(key, value)
+func (m *MockTripSettingsRepository) UpdateByKey(ctx context.Context, key, value string) error {
+	args := m.Called(ctx, key, value)
 	return args.Error(0)
 }
 
-func (m *MockSettingsRepository) GetAll() ([]domain.Settings, error) {
-	args := m.Called()
+func (m *MockTripSettingsRepository) GetAll(ctx context.Context) ([]domain.Settings, error) {
+	args := m.Called(ctx)
 	return args.Get(0).([]domain.Settings), args.Error(1)
 }
 
 func TestTripService_CreateTrip(t *testing.T) {
 	mockTripRepo := new(MockTripRepository)
-	mockClientService := new(MockClientService)
-	mockSettingsRepo := new(MockSettingsRepository)
+	mockClientService := new(MockTripClientService)
+	mockSettingsRepo := new(MockTripSettingsRepository)
 
 	tripService := service.NewTripService(mockTripRepo, mockClientService, mockSettingsRepo)
 
@@ -108,14 +108,14 @@ func TestTripService_CreateTrip(t *testing.T) {
 		}
 
 		// Mock expectations
-		mockClientService.On("GetOrCreateClient", "Test Client").Return(expectedClient, nil)
-		mockTripRepo.On("Create", mock.AnythingOfType("*domain.Trip")).Return(nil).Run(func(args mock.Arguments) {
-			trip := args.Get(0).(*domain.Trip)
+		mockClientService.On("GetOrCreateClient", mock.Anything, "Test Client").Return(expectedClient, nil)
+		mockTripRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.Trip")).Return(nil).Run(func(args mock.Arguments) {
+			trip := args.Get(1).(*domain.Trip)
 			trip.ID = 1
 		})
 
 		// Execute
-		result, err := tripService.CreateTrip(req)
+		result, err := tripService.CreateTrip(context.Background(), req)
 
 		// Assert
 		assert.NoError(t, err)
@@ -137,7 +137,7 @@ func TestTripService_CreateTrip(t *testing.T) {
 		}
 
 		// Execute
-		result, err := tripService.CreateTrip(req)
+		result, err := tripService.CreateTrip(context.Background(), req)
 
 		// Assert
 		assert.Error(t, err)
@@ -160,14 +160,14 @@ func TestTripService_CreateTrip(t *testing.T) {
 		}
 
 		// Mock expectations
-		mockClientService.On("GetOrCreateClient", "New Client").Return(newClient, nil)
-		mockTripRepo.On("Create", mock.AnythingOfType("*domain.Trip")).Return(nil).Run(func(args mock.Arguments) {
-			trip := args.Get(0).(*domain.Trip)
+		mockClientService.On("GetOrCreateClient", mock.Anything, "New Client").Return(newClient, nil)
+		mockTripRepo.On("Create", mock.Anything, mock.AnythingOfType("*domain.Trip")).Return(nil).Run(func(args mock.Arguments) {
+			trip := args.Get(1).(*domain.Trip)
 			trip.ID = 2
 		})
 
 		// Execute
-		result, err := tripService.CreateTrip(req)
+		result, err := tripService.CreateTrip(context.Background(), req)
 
 		// Assert
 		assert.NoError(t, err)
@@ -181,8 +181,8 @@ func TestTripService_CreateTrip(t *testing.T) {
 
 func TestTripService_GetSummary(t *testing.T) {
 	mockTripRepo := new(MockTripRepository)
-	mockClientService := new(MockClientService)
-	mockSettingsRepo := new(MockSettingsRepository)
+	mockClientService := new(MockTripClientService)
+	mockSettingsRepo := new(MockTripSettingsRepository)
 
 	tripService := service.NewTripService(mockTripRepo, mockClientService, mockSettingsRepo)
 
@@ -212,11 +212,11 @@ func TestTripService_GetSummary(t *testing.T) {
 		// Mock expectations
 		startDate := now.AddDate(0, -5, 0).Format("2006-01-01")
 		endDate := time.Date(now.Year(), now.Month()+1, 0, 23, 59, 59, 999999999, now.Location()).Format("2006-01-02")
-		mockTripRepo.On("GetMonthlySummary", startDate, endDate).Return(mockSummaries, nil)
-		mockSettingsRepo.On("GetByKey", "mileage_rate").Return(settings, nil)
+		mockTripRepo.On("GetMonthlySummary", mock.Anything, startDate, endDate).Return(mockSummaries, nil)
+		mockSettingsRepo.On("GetByKey", mock.Anything, "mileage_rate").Return(settings, nil)
 
 		// Execute
-		result, err := tripService.GetSummary()
+		result, err := tripService.GetSummary(context.Background())
 
 		// Assert
 		assert.NoError(t, err)
@@ -253,11 +253,11 @@ func TestTripService_GetSummary(t *testing.T) {
 		// Mock expectations
 		startDate := now.AddDate(0, -5, 0).Format("2006-01-01")
 		endDate := time.Date(now.Year(), now.Month()+1, 0, 23, 59, 59, 999999999, now.Location()).Format("2006-01-02")
-		mockTripRepo.On("GetMonthlySummary", startDate, endDate).Return(mockSummaries, nil)
-		mockSettingsRepo.On("GetByKey", "mileage_rate").Return(nil, gorm.ErrRecordNotFound)
+		mockTripRepo.On("GetMonthlySummary", mock.Anything, startDate, endDate).Return(mockSummaries, nil)
+		mockSettingsRepo.On("GetByKey", mock.Anything, "mileage_rate").Return(nil, gorm.ErrRecordNotFound)
 
 		// Execute
-		result, err := tripService.GetSummary()
+		result, err := tripService.GetSummary(context.Background())
 
 		// Assert
 		assert.NoError(t, err)

@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/oscar/mileagetracker/internal/domain"
@@ -23,10 +24,10 @@ func TestSettingsService_GetSettings(t *testing.T) {
 		}
 
 		// Mock expectations
-		mockSettingsRepo.On("GetByKey", "mileage_rate").Return(mileageRateSetting, nil)
+		mockSettingsRepo.On("GetByKey", mock.Anything, "mileage_rate").Return(mileageRateSetting, nil)
 
 		// Execute
-		result, err := settingsService.GetSettings()
+		result, err := settingsService.GetSettings(context.Background())
 
 		// Assert
 		assert.NoError(t, err)
@@ -38,10 +39,10 @@ func TestSettingsService_GetSettings(t *testing.T) {
 
 	t.Run("should return default when setting not found", func(t *testing.T) {
 		// Mock expectations
-		mockSettingsRepo.On("GetByKey", "mileage_rate").Return(nil, gorm.ErrRecordNotFound)
+		mockSettingsRepo.On("GetByKey", mock.Anything, "mileage_rate").Return(nil, gorm.ErrRecordNotFound)
 
 		// Execute
-		result, err := settingsService.GetSettings()
+		result, err := settingsService.GetSettings(context.Background())
 
 		// Assert
 		assert.NoError(t, err)
@@ -60,10 +61,10 @@ func TestSettingsService_GetSettings(t *testing.T) {
 		}
 
 		// Mock expectations
-		mockSettingsRepo.On("GetByKey", "mileage_rate").Return(mileageRateSetting, nil)
+		mockSettingsRepo.On("GetByKey", mock.Anything, "mileage_rate").Return(mileageRateSetting, nil)
 
 		// Execute
-		result, err := settingsService.GetSettings()
+		result, err := settingsService.GetSettings(context.Background())
 
 		// Assert
 		assert.NoError(t, err)
@@ -79,21 +80,21 @@ type MockSettingsRepository struct {
 	mock.Mock
 }
 
-func (m *MockSettingsRepository) GetByKey(key string) (*domain.Settings, error) {
-	args := m.Called(key)
+func (m *MockSettingsRepository) GetByKey(ctx context.Context, key string) (*domain.Settings, error) {
+	args := m.Called(ctx, key)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
 	return args.Get(0).(*domain.Settings), args.Error(1)
 }
 
-func (m *MockSettingsRepository) UpdateByKey(key, value string) error {
-	args := m.Called(key, value)
+func (m *MockSettingsRepository) UpdateByKey(ctx context.Context, key, value string) error {
+	args := m.Called(ctx, key, value)
 	return args.Error(0)
 }
 
-func (m *MockSettingsRepository) GetAll() ([]domain.Settings, error) {
-	args := m.Called()
+func (m *MockSettingsRepository) GetAll(ctx context.Context) ([]domain.Settings, error) {
+	args := m.Called(ctx)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -111,10 +112,10 @@ func TestSettingsService_UpdateSettings(t *testing.T) {
 		}
 
 		// Mock expectations
-		mockSettingsRepo.On("UpdateByKey", "mileage_rate", "0.75").Return(nil)
+		mockSettingsRepo.On("UpdateByKey", mock.Anything, "mileage_rate", "0.75").Return(nil)
 
 		// Execute
-		result, err := settingsService.UpdateSettings(updateRequest)
+		result, err := settingsService.UpdateSettings(context.Background(), updateRequest)
 
 		// Assert
 		assert.NoError(t, err)
@@ -131,7 +132,7 @@ func TestSettingsService_UpdateSettings(t *testing.T) {
 		}
 
 		// Execute
-		result, err := settingsService.UpdateSettings(updateRequest)
+		result, err := settingsService.UpdateSettings(context.Background(), updateRequest)
 
 		// Assert
 		assert.Error(t, err)
@@ -149,10 +150,10 @@ func TestSettingsService_UpdateSettings(t *testing.T) {
 		}
 
 		// Mock expectations
-		mockSettingsRepo.On("UpdateByKey", "mileage_rate", "0").Return(nil)
+		mockSettingsRepo.On("UpdateByKey", mock.Anything, "mileage_rate", "0").Return(nil)
 
 		// Execute
-		result, err := settingsService.UpdateSettings(updateRequest)
+		result, err := settingsService.UpdateSettings(context.Background(), updateRequest)
 
 		// Assert
 		assert.NoError(t, err)
@@ -170,10 +171,10 @@ func TestSettingsService_UpdateSettings(t *testing.T) {
 		dbError := gorm.ErrInvalidDB
 
 		// Mock expectations
-		mockSettingsRepo.On("UpdateByKey", "mileage_rate", "0.67").Return(dbError)
+		mockSettingsRepo.On("UpdateByKey", mock.Anything, "mileage_rate", "0.67").Return(dbError)
 
 		// Execute
-		result, err := settingsService.UpdateSettings(updateRequest)
+		result, err := settingsService.UpdateSettings(context.Background(), updateRequest)
 
 		// Assert
 		assert.Error(t, err)
@@ -190,10 +191,10 @@ func TestSettingsService_UpdateSettings(t *testing.T) {
 		}
 
 		// Mock expectations
-		mockSettingsRepo.On("UpdateByKey", "mileage_rate", "0.655").Return(nil)
+		mockSettingsRepo.On("UpdateByKey", mock.Anything, "mileage_rate", "0.655").Return(nil)
 
 		// Execute
-		result, err := settingsService.UpdateSettings(updateRequest)
+		result, err := settingsService.UpdateSettings(context.Background(), updateRequest)
 
 		// Assert
 		assert.NoError(t, err)
@@ -203,4 +204,3 @@ func TestSettingsService_UpdateSettings(t *testing.T) {
 		mockSettingsRepo.AssertExpectations(t)
 	})
 }
-

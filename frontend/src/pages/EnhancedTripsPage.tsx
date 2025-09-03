@@ -6,9 +6,9 @@ import {
 import QuickAddTrip from '../components/QuickAddTrip'
 import TripsList from '../components/TripsList'
 import { StatsOverviewSkeleton } from '../components/LoadingSkeletons'
-import { useTrips } from '../hooks/useTrips'
 import { useSummary } from '../hooks/useSummary'
 import { useAllClients } from '../hooks/useClients'
+import { useTrips } from '../hooks/useTrips'
 import type { TripFilters, DateRangeFilter, MilesRangeFilter } from '../types'
 
 export default function EnhancedTripsPage() {
@@ -40,9 +40,9 @@ export default function EnhancedTripsPage() {
     return () => clearTimeout(timeoutId)
   }, [searchQuery])
   
-  const { data: tripsData } = useTrips(1, 10, appliedFilters)
   const { data: summaryData, isLoading: isSummaryLoading } = useSummary()
   const { data: clientsData } = useAllClients()
+  const { data: tripsData } = useTrips(1, 1)
   
   // Calculate totals from summary data
   const totalMiles = summaryData?.months?.reduce((sum, month) => sum + month.total_miles, 0) || 0
@@ -75,13 +75,13 @@ export default function EnhancedTripsPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-ctp-green">
-                  ${(estimatedDeduction || ((tripsData?.trips?.reduce((sum, trip) => sum + trip.miles, 0) || 0) * 0.67)).toFixed(0)}
+                  ${estimatedDeduction.toFixed(0)}
                 </p>
                 <p className="text-xs text-ctp-subtext1">Deductions</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-ctp-yellow">
-                  {(totalMiles || tripsData?.trips?.reduce((sum, trip) => sum + trip.miles, 0) || 0).toFixed(0)}
+                  {totalMiles.toFixed(0)}
                 </p>
                 <p className="text-xs text-ctp-subtext1">Miles</p>
               </div>
@@ -215,17 +215,12 @@ export default function EnhancedTripsPage() {
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-ctp-text flex items-center gap-2">
             {appliedFilters.searchQuery || appliedFilters.dateRange || appliedFilters.clientFilter || appliedFilters.milesRange ? 'Filtered Trips' : 'Recent Trips'}
-            {(appliedFilters.searchQuery || appliedFilters.dateRange || appliedFilters.clientFilter || appliedFilters.milesRange) && (
-              <span className="text-xs bg-ctp-blue/20 text-ctp-blue px-2 py-1 rounded-full">
-                {tripsData?.total || 0} results
-              </span>
-            )}
           </h2>
           
           <TripsList 
             enhanced={true} 
-            showPagination={false} 
-            limit={5}
+            showPagination={true} 
+            limit={10}
             filters={appliedFilters}
           />
         </div>

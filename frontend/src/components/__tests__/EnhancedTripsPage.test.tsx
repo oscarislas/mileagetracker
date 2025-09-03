@@ -70,42 +70,137 @@ const renderWithQueryClient = (component: React.ReactElement) => {
   )
 }
 
-describe('EnhancedTripsPage Filter Functionality', () => {
+describe('EnhancedTripsPage', () => {
   beforeEach(() => {
     mockUseTrips.mockReturnValue({
       data: mockTripsData,
       isLoading: false,
       isError: false,
-      error: null
-    })
+      error: null,
+      isPending: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      status: 'success',
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isFetching: false,
+      isRefetching: false,
+      isStale: false,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      fetchStatus: 'idle' as const,
+      isPlaceholderData: false,
+      isPreviousData: false,
+      isInitialLoading: false
+    } as any)
     
     mockUseSummary.mockReturnValue({
       data: mockSummaryData,
       isLoading: false,
       isError: false,
-      error: null
-    })
+      error: null,
+      isPending: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      status: 'success',
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isFetching: false,
+      isRefetching: false,
+      isStale: false,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      fetchStatus: 'idle' as const,
+      isPlaceholderData: false,
+      isPreviousData: false,
+      isInitialLoading: false
+    } as any)
     
     mockUseAllClients.mockReturnValue({
       data: mockClientsData,
       isLoading: false,
       isError: false,
-      error: null
-    })
+      error: null,
+      isPending: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      status: 'success',
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isFetching: false,
+      isRefetching: false,
+      isStale: false,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      fetchStatus: 'idle' as const,
+      isPlaceholderData: false,
+      isPreviousData: false,
+      isInitialLoading: false
+    } as any)
     
     mockUseClientSuggestions.mockReturnValue({
       data: { clients: [] },
       isLoading: false,
       isError: false,
-      error: null
-    })
+      error: null,
+      isPending: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      status: 'success',
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isFetching: false,
+      isRefetching: false,
+      isStale: false,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      fetchStatus: 'idle' as const,
+      isPlaceholderData: false,
+      isPreviousData: false,
+      isInitialLoading: false
+    } as any)
     
     mockUseCreateTrip.mockReturnValue({
       mutate: vi.fn(),
-      isLoading: false,
+      isPending: false,
       isError: false,
-      error: null
-    })
+      isIdle: true,
+      isSuccess: false,
+      error: null,
+      data: undefined,
+      failureCount: 0,
+      failureReason: null,
+      mutateAsync: vi.fn(),
+      reset: vi.fn(),
+      status: 'idle',
+      submittedAt: 0,
+      variables: undefined,
+      context: undefined
+    } as any)
   })
 
   afterEach(() => {
@@ -167,9 +262,9 @@ describe('EnhancedTripsPage Filter Functionality', () => {
       const lastCall = mockUseTrips.mock.calls[mockUseTrips.mock.calls.length - 1]
       const filters = lastCall[2] // Third parameter is filters
       
-      expect(filters.dateRange).toBe('month')
-      expect(filters.clientFilter).toBe('Test Client')
-      expect(filters.milesRange).toBe('10-50')
+      expect(filters?.dateRange).toBe('month')
+      expect(filters?.clientFilter).toBe('Test Client')
+      expect(filters?.milesRange).toBe('10-50')
     })
   })
 
@@ -202,11 +297,11 @@ describe('EnhancedTripsPage Filter Functionality', () => {
     await waitFor(() => {
       const lastCall = mockUseTrips.mock.calls[mockUseTrips.mock.calls.length - 1]
       const filters = lastCall[2]
-      expect(filters.searchQuery).toBe('test search')
+      expect(filters?.searchQuery).toBe('test search')
     }, { timeout: 1000 })
   })
 
-  test('displays filtered trips count when filters are applied', async () => {
+  test('displays filtered trips heading when filters are applied', async () => {
     renderWithQueryClient(<EnhancedTripsPage />)
     
     // Set a search query to trigger filters
@@ -215,7 +310,166 @@ describe('EnhancedTripsPage Filter Functionality', () => {
     
     await waitFor(() => {
       expect(screen.getByText('Filtered Trips')).toBeInTheDocument()
-      expect(screen.getByText('1 results')).toBeInTheDocument()
+      // The "1 total" text comes from TripsList component, not the main page
+      expect(screen.getByText('1 total')).toBeInTheDocument()
     })
+  })
+
+  test('displays total trips count from trips data, not summary data', () => {
+    // Mock trips data with specific total count
+    const mockTripsDataWithTotal = {
+      ...mockTripsData,
+      total: 11 // This should be displayed
+    }
+    
+    // Mock summary data without total_trips (which doesn't exist in the API)
+    const mockSummaryWithoutTotal = {
+      months: [
+        {
+          month: 'January 2025',
+          year: 2025,
+          month_num: 1,
+          total_miles: 100,
+          amount: 67
+        }
+      ]
+      // Note: no total_trips property - this is correct per the API spec
+    }
+    
+    mockUseTrips.mockReturnValue({
+      data: mockTripsDataWithTotal,
+      isLoading: false,
+      isError: false,
+      error: null,
+      isPending: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      status: 'success',
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isFetching: false,
+      isRefetching: false,
+      isStale: false,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      fetchStatus: 'idle' as const,
+      isPlaceholderData: false,
+      isPreviousData: false,
+      isInitialLoading: false
+    } as any)
+    
+    mockUseSummary.mockReturnValue({
+      data: mockSummaryWithoutTotal,
+      isLoading: false,
+      isError: false,
+      error: null,
+      isPending: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      status: 'success',
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isFetching: false,
+      isRefetching: false,
+      isStale: false,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      fetchStatus: 'idle' as const,
+      isPlaceholderData: false,
+      isPreviousData: false,
+      isInitialLoading: false
+    } as any)
+    
+    renderWithQueryClient(<EnhancedTripsPage />)
+    
+    // Verify that the total trips count comes from tripsData.total, not summaryData.total_trips
+    expect(screen.getByText('11')).toBeInTheDocument()
+    expect(screen.getByText('Total Trips')).toBeInTheDocument()
+  })
+  
+  test('displays 0 total trips when trips data is not loaded', () => {
+    mockUseTrips.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      error: null,
+      isPending: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      status: 'success',
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isFetching: false,
+      isRefetching: false,
+      isStale: false,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      fetchStatus: 'idle' as const,
+      isPlaceholderData: false,
+      isPreviousData: false,
+      isInitialLoading: false
+    } as any)
+    
+    mockUseSummary.mockReturnValue({
+      data: mockSummaryData,
+      isLoading: false,
+      isError: false,
+      error: null,
+      isPending: false,
+      isSuccess: true,
+      isLoadingError: false,
+      isRefetchError: false,
+      status: 'success',
+      dataUpdatedAt: Date.now(),
+      errorUpdatedAt: 0,
+      failureCount: 0,
+      failureReason: null,
+      errorUpdateCount: 0,
+      isFetched: true,
+      isFetchedAfterMount: true,
+      isFetching: false,
+      isRefetching: false,
+      isStale: false,
+      refetch: vi.fn(),
+      remove: vi.fn(),
+      fetchStatus: 'idle' as const,
+      isPlaceholderData: false,
+      isPreviousData: false,
+      isInitialLoading: false
+    } as any)
+    
+    renderWithQueryClient(<EnhancedTripsPage />)
+    
+    // Should display 0 when trips data is null/undefined
+    expect(screen.getByText('0')).toBeInTheDocument()
+    expect(screen.getByText('Total Trips')).toBeInTheDocument()
+  })
+  
+  test('calls useTrips hook with minimal parameters for total count', () => {
+    renderWithQueryClient(<EnhancedTripsPage />)
+    
+    // Verify that useTrips is called with (1, 1) to get just the total count efficiently
+    // This should be the first call (for the stats overview)
+    expect(mockUseTrips).toHaveBeenNthCalledWith(1, 1, 1)
+    // There will also be a second call from TripsList component with different parameters
+    expect(mockUseTrips).toHaveBeenCalledTimes(2)
   })
 })

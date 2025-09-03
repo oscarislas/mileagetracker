@@ -90,6 +90,22 @@ test-e2e: ## Run end-to-end tests
 	@echo "$(GREEN)Running E2E tests...$(NC)"
 	@cd $(FRONTEND_DIR) && npm run test:e2e
 
+# Coverage
+test-coverage: ## Run all tests with coverage reports
+	@echo "$(GREEN)Running all tests with coverage...$(NC)"
+	@$(MAKE) test-backend-coverage
+	@$(MAKE) test-frontend-coverage
+
+test-backend-coverage: ## Run backend tests with coverage
+	@echo "$(GREEN)Running backend tests with coverage...$(NC)"
+	@mkdir -p coverage/backend
+	@cd $(BACKEND_DIR) && go test -coverprofile=../coverage/backend/coverage.out -covermode=count ./...
+	@cd $(BACKEND_DIR) && go tool cover -html=../coverage/backend/coverage.out -o ../coverage/backend/coverage.html
+
+test-frontend-coverage: ## Run frontend tests with coverage
+	@echo "$(GREEN)Running frontend tests with coverage...$(NC)"
+	@cd $(FRONTEND_DIR) && npm run test:coverage
+
 # Code quality
 lint: ## Run linting for all projects
 	@$(MAKE) lint-backend

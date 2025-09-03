@@ -21,5 +21,15 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    coverage: {
+      reportsDirectory: '../coverage/frontend',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.config.*',
+        'dist/',
+      ],
+    },
   },
 })

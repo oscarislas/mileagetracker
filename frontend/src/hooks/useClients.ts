@@ -17,3 +17,14 @@ export function useClientSuggestions(query: string) {
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }
+
+export function useAllClients() {
+  return useQuery({
+    queryKey: ['clients', 'all'],
+    queryFn: async () => {
+      const response = await apiClient.get<ClientSuggestionsResponse>('/api/v1/clients')
+      return response.data
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}

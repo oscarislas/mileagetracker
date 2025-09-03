@@ -39,15 +39,15 @@ func (m *MockSettingsService) UpdateSettings(ctx context.Context, req domain.Upd
 func setupTestRouter(settingsService *MockSettingsService) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	
+
 	handler := NewHandler(settingsService)
-	
+
 	api := router.Group("/api/v1")
 	{
 		api.GET("/settings", handler.GetSettings)
 		api.PUT("/settings", handler.UpdateSettings)
 	}
-	
+
 	return router
 }
 
@@ -56,11 +56,11 @@ func TestSettingsHandler_GetSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		expectedSettings := &domain.SettingsResponse{
 			MileageRate: 0.67,
 		}
-		
+
 		mockService.On("GetSettings", mock.Anything).Return(expectedSettings, nil)
 
 		// Execute
@@ -70,7 +70,7 @@ func TestSettingsHandler_GetSettings(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response domain.SettingsResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -83,11 +83,11 @@ func TestSettingsHandler_GetSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		expectedSettings := &domain.SettingsResponse{
 			MileageRate: 0.67,
 		}
-		
+
 		mockService.On("GetSettings", mock.Anything).Return(expectedSettings, nil)
 
 		// Execute
@@ -97,7 +97,7 @@ func TestSettingsHandler_GetSettings(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response domain.SettingsResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -110,7 +110,7 @@ func TestSettingsHandler_GetSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		mockService.On("GetSettings", mock.Anything).Return(nil, fmt.Errorf("database connection failed"))
 
 		// Execute
@@ -128,11 +128,11 @@ func TestSettingsHandler_GetSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		expectedSettings := &domain.SettingsResponse{
 			MileageRate: 0.58,
 		}
-		
+
 		mockService.On("GetSettings", mock.Anything).Return(expectedSettings, nil)
 
 		// Execute
@@ -142,7 +142,7 @@ func TestSettingsHandler_GetSettings(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response domain.SettingsResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -157,7 +157,7 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		requestBody := domain.UpdateSettingsRequest{
 			MileageRate: 0.58,
 		}
@@ -172,13 +172,13 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		jsonData, _ := json.Marshal(requestBody)
 		req, _ := http.NewRequest("PUT", "/api/v1/settings", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response domain.SettingsResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -187,12 +187,11 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		mockService.AssertExpectations(t)
 	})
 
-
 	t.Run("should update settings with high precision rate", func(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		requestBody := domain.UpdateSettingsRequest{
 			MileageRate: 0.655,
 		}
@@ -207,13 +206,13 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		jsonData, _ := json.Marshal(requestBody)
 		req, _ := http.NewRequest("PUT", "/api/v1/settings", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response domain.SettingsResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -226,11 +225,11 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		// Execute
 		req, _ := http.NewRequest("PUT", "/api/v1/settings", bytes.NewBuffer([]byte("invalid json")))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -243,11 +242,11 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		// Execute
 		req, _ := http.NewRequest("PUT", "/api/v1/settings", bytes.NewBuffer([]byte("{}")))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -260,12 +259,12 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		// Execute
 		jsonData := []byte(`{"mileage_rate": -0.5}`)
 		req, _ := http.NewRequest("PUT", "/api/v1/settings", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -278,12 +277,12 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		// Execute
 		jsonData := []byte(`{"mileage_rate": "invalid"}`)
 		req, _ := http.NewRequest("PUT", "/api/v1/settings", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -296,7 +295,7 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		requestBody := domain.UpdateSettingsRequest{
 			MileageRate: 0.58,
 		}
@@ -307,7 +306,7 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		jsonData, _ := json.Marshal(requestBody)
 		req, _ := http.NewRequest("PUT", "/api/v1/settings", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -322,7 +321,7 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		requestBody := domain.UpdateSettingsRequest{
 			MileageRate: 999.99,
 		}
@@ -337,13 +336,13 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		jsonData, _ := json.Marshal(requestBody)
 		req, _ := http.NewRequest("PUT", "/api/v1/settings", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response domain.SettingsResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -356,7 +355,7 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		// Setup
 		mockService := new(MockSettingsService)
 		router := setupTestRouter(mockService)
-		
+
 		requestBody := domain.UpdateSettingsRequest{
 			MileageRate: 0.58,
 		}
@@ -366,18 +365,18 @@ func TestSettingsHandler_UpdateSettings(t *testing.T) {
 		}
 
 		mockService.On("UpdateSettings", mock.Anything, requestBody).Return(expectedSettings, nil)
-		
+
 		// Execute
 		jsonData := []byte(`{"mileage_rate": 0.58}`)
 		req, _ := http.NewRequest("PUT", "/api/v1/settings", bytes.NewBuffer(jsonData))
 		// Intentionally omit Content-Type header - Gin should still parse JSON
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
 		// Assert - should still work as Gin is flexible with JSON parsing
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		mockService.AssertExpectations(t)
 	})
 }

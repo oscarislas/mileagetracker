@@ -1,8 +1,11 @@
 package trip
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oscar/mileagetracker/internal/api/common"
@@ -18,6 +21,71 @@ func NewHandler(tripService service.TripService) *Handler {
 	return &Handler{
 		tripService: tripService,
 	}
+}
+
+// parseFilters extracts and validates filter parameters from query string
+func (h *Handler) parseFilters(c *gin.Context) (domain.TripFilters, error) {
+	filters := domain.TripFilters{}
+
+	// Search filter - trim whitespace
+	if search := strings.TrimSpace(c.Query("search")); search != "" {
+		filters.Search = search
+	}
+
+	// Client filter - trim whitespace
+	if client := strings.TrimSpace(c.Query("client")); client != "" {
+		filters.Client = client
+	}
+
+	// Date from filter - validate format
+	if dateFrom := c.Query("date_from"); dateFrom != "" {
+		if _, err := time.Parse("2006-01-02", dateFrom); err != nil {
+			return filters, errors.New("date_from must be in YYYY-MM-DD format")
+		}
+		filters.DateFrom = dateFrom
+	}
+
+	// Date to filter - validate format
+	if dateTo := c.Query("date_to"); dateTo != "" {
+		if _, err := time.Parse("2006-01-02", dateTo); err != nil {
+			return filters, errors.New("date_to must be in YYYY-MM-DD format")
+		}
+		filters.DateTo = dateTo
+	}
+
+	// Min miles filter - validate positive number
+	if minMilesStr := c.Query("min_miles"); minMilesStr != "" {
+		minMiles, err := strconv.ParseFloat(minMilesStr, 64)
+		if err != nil || minMiles < 0 {
+			return filters, errors.New("min_miles must be a non-negative number")
+		}
+		filters.MinMiles = &minMiles
+	}
+
+	// Max miles filter - validate positive number
+	if maxMilesStr := c.Query("max_miles"); maxMilesStr != "" {
+		maxMiles, err := strconv.ParseFloat(maxMilesStr, 64)
+		if err != nil || maxMiles < 0 {
+			return filters, errors.New("max_miles must be a non-negative number")
+		}
+		filters.MaxMiles = &maxMiles
+	}
+
+	// Validate that min_miles is not greater than max_miles
+	if filters.MinMiles != nil && filters.MaxMiles != nil && *filters.MinMiles > *filters.MaxMiles {
+		return filters, errors.New("min_miles cannot be greater than max_miles")
+	}
+
+	// Validate that date_from is not after date_to
+	if filters.DateFrom != "" && filters.DateTo != "" {
+		dateFrom, _ := time.Parse("2006-01-02", filters.DateFrom)
+		dateTo, _ := time.Parse("2006-01-02", filters.DateTo)
+		if dateFrom.After(dateTo) {
+			return filters, errors.New("date_from cannot be after date_to")
+		}
+	}
+
+	return filters, nil
 }
 
 // CreateTrip creates a new trip
@@ -37,7 +105,7 @@ func (h *Handler) CreateTrip(c *gin.Context) {
 	c.JSON(http.StatusCreated, trip)
 }
 
-// GetTrips retrieves trips with pagination
+// GetTrips retrieves trips with pagination and filtering
 func (h *Handler) GetTrips(c *gin.Context) {
 	page := 1
 	limit := 10
@@ -54,7 +122,14 @@ func (h *Handler) GetTrips(c *gin.Context) {
 		}
 	}
 
-	trips, total, err := h.tripService.GetTrips(c.Request.Context(), page, limit)
+	// Parse filter parameters
+	filters, err := h.parseFilters(c)
+	if err != nil {
+		common.RespondWithBadRequestError(c, err.Error())
+		return
+	}
+
+	trips, total, err := h.tripService.GetTrips(c.Request.Context(), page, limit, filters)
 	if err != nil {
 		common.RespondWithInternalError(c, err)
 		return

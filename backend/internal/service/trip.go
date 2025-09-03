@@ -15,7 +15,7 @@ type TripService interface {
 	UpdateTrip(ctx context.Context, id uint, req domain.UpdateTripRequest) (*domain.Trip, error)
 	DeleteTrip(ctx context.Context, id uint) error
 	GetTripByID(ctx context.Context, id uint) (*domain.Trip, error)
-	GetTrips(ctx context.Context, page, limit int) ([]domain.Trip, int64, error)
+	GetTrips(ctx context.Context, page, limit int, filters domain.TripFilters) ([]domain.Trip, int64, error)
 	GetSummary(ctx context.Context) (*domain.SummaryResponse, error)
 }
 
@@ -106,7 +106,7 @@ func (s *tripService) GetTripByID(ctx context.Context, id uint) (*domain.Trip, e
 	return s.tripRepo.FindByID(ctx, id)
 }
 
-func (s *tripService) GetTrips(ctx context.Context, page, limit int) ([]domain.Trip, int64, error) {
+func (s *tripService) GetTrips(ctx context.Context, page, limit int, filters domain.TripFilters) ([]domain.Trip, int64, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -114,7 +114,7 @@ func (s *tripService) GetTrips(ctx context.Context, page, limit int) ([]domain.T
 		limit = 10
 	}
 
-	return s.tripRepo.GetPaginated(ctx, page, limit)
+	return s.tripRepo.GetPaginated(ctx, page, limit, filters)
 }
 
 func (s *tripService) GetSummary(ctx context.Context) (*domain.SummaryResponse, error) {

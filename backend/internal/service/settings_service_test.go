@@ -1,11 +1,11 @@
-package service_test
+package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/oscar/mileagetracker/internal/domain"
-	"github.com/oscar/mileagetracker/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
@@ -13,7 +13,7 @@ import (
 
 func TestSettingsService_GetSettings(t *testing.T) {
 	mockSettingsRepo := new(MockSettingsRepository)
-	settingsService := service.NewSettingsService(mockSettingsRepo)
+	settingsService := NewSettingsService(mockSettingsRepo)
 
 	t.Run("should return settings successfully", func(t *testing.T) {
 		// Setup
@@ -73,6 +73,129 @@ func TestSettingsService_GetSettings(t *testing.T) {
 
 		mockSettingsRepo.AssertExpectations(t)
 	})
+
+	t.Run("should handle various invalid value formats", func(t *testing.T) {
+		testCases := []struct {
+			name  string
+			value string
+		}{
+			{"empty string", ""},
+			{"alphabetic", "abc"},
+			{"special chars", "!@#$%"},
+			{"mixed alphanumeric", "12.3abc"},
+			{"scientific notation invalid", "1.23e"},
+			{"multiple dots", "1.2.3"},
+			{"negative signs", "--1.23"},
+			{"currency format", "$1.23"},
+			{"percentage", "12.3%"},
+			{"fraction", "1/2"},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				// Setup - create fresh mocks for each test
+				freshMockSettingsRepo := new(MockSettingsRepository)
+				freshSettingsService := NewSettingsService(freshMockSettingsRepo)
+
+				mileageRateSetting := &domain.Settings{
+					ID:    1,
+					Key:   "mileage_rate",
+					Value: tc.value,
+				}
+
+				// Mock expectations
+				freshMockSettingsRepo.On("GetByKey", mock.Anything, "mileage_rate").Return(mileageRateSetting, nil)
+
+				// Execute
+				result, err := freshSettingsService.GetSettings(context.Background())
+
+				// Assert
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, float64(0.67), result.MileageRate) // Should always default
+
+				freshMockSettingsRepo.AssertExpectations(t)
+			})
+		}
+	})
+
+	t.Run("should handle edge case valid values", func(t *testing.T) {
+		testCases := []struct {
+			name     string
+			value    string
+			expected float64
+		}{
+			{"zero", "0", 0.0},
+			{"zero with decimal", "0.0", 0.0},
+			{"small positive", "0.001", 0.001},
+			{"large positive", "999.99", 999.99},
+			{"scientific notation", "1.23e2", 123.0},
+			{"negative scientific", "1.23e-2", 0.0123},
+			{"leading zeros", "00123.45", 123.45},
+			{"trailing zeros", "123.450", 123.45},
+			{"no decimal point", "123", 123.0},
+			{"negative value", "-1.23", -1.23},
+			{"very small", "1e-10", 1e-10},
+			{"very large", "1e10", 1e10},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				// Setup - create fresh mocks for each test
+				freshMockSettingsRepo := new(MockSettingsRepository)
+				freshSettingsService := NewSettingsService(freshMockSettingsRepo)
+
+				mileageRateSetting := &domain.Settings{
+					ID:    1,
+					Key:   "mileage_rate",
+					Value: tc.value,
+				}
+
+				// Mock expectations
+				freshMockSettingsRepo.On("GetByKey", mock.Anything, "mileage_rate").Return(mileageRateSetting, nil)
+
+				// Execute
+				result, err := freshSettingsService.GetSettings(context.Background())
+
+				// Assert
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, tc.expected, result.MileageRate)
+
+				freshMockSettingsRepo.AssertExpectations(t)
+			})
+		}
+	})
+
+	t.Run("should handle database errors other than record not found", func(t *testing.T) {
+		testCases := []error{
+			fmt.Errorf("connection timeout"),
+			gorm.ErrInvalidDB,
+			fmt.Errorf("permission denied"),
+			fmt.Errorf("table not found"),
+		}
+
+		for i, dbError := range testCases {
+			t.Run(fmt.Sprintf("database error %d", i+1), func(t *testing.T) {
+				// Setup - create fresh mocks for each test
+				freshMockSettingsRepo := new(MockSettingsRepository)
+				freshSettingsService := NewSettingsService(freshMockSettingsRepo)
+
+				// Mock expectations - return non-record-not-found error
+				freshMockSettingsRepo.On("GetByKey", mock.Anything, "mileage_rate").Return(nil, dbError)
+
+				// Execute
+				result, err := freshSettingsService.GetSettings(context.Background())
+
+				// Assert - should still return default, current implementation doesn't distinguish errors
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+				assert.Equal(t, float64(0.67), result.MileageRate)
+
+				freshMockSettingsRepo.AssertExpectations(t)
+			})
+		}
+	})
 }
 
 // MockSettingsRepository implements the SettingsRepository interface for testing
@@ -103,7 +226,7 @@ func (m *MockSettingsRepository) GetAll(ctx context.Context) ([]domain.Settings,
 
 func TestSettingsService_UpdateSettings(t *testing.T) {
 	mockSettingsRepo := new(MockSettingsRepository)
-	settingsService := service.NewSettingsService(mockSettingsRepo)
+	settingsService := NewSettingsService(mockSettingsRepo)
 
 	t.Run("should update settings successfully", func(t *testing.T) {
 		// Setup

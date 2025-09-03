@@ -49,8 +49,8 @@ func (m *MockTripService) GetTripByID(ctx context.Context, id uint) (*domain.Tri
 	return args.Get(0).(*domain.Trip), args.Error(1)
 }
 
-func (m *MockTripService) GetTrips(ctx context.Context, page, limit int) ([]domain.Trip, int64, error) {
-	args := m.Called(ctx, page, limit)
+func (m *MockTripService) GetTrips(ctx context.Context, page, limit int, filters domain.TripFilters) ([]domain.Trip, int64, error) {
+	args := m.Called(ctx, page, limit, filters)
 	return args.Get(0).([]domain.Trip), args.Get(1).(int64), args.Error(2)
 }
 
@@ -65,9 +65,9 @@ func (m *MockTripService) GetSummary(ctx context.Context) (*domain.SummaryRespon
 func setupTestRouter(tripService *MockTripService) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	
+
 	handler := NewHandler(tripService)
-	
+
 	api := router.Group("/api/v1")
 	{
 		api.POST("/trips", handler.CreateTrip)
@@ -77,7 +77,7 @@ func setupTestRouter(tripService *MockTripService) *gin.Engine {
 		api.DELETE("/trips/:id", handler.DeleteTrip)
 		api.GET("/trips/summary", handler.GetSummary)
 	}
-	
+
 	return router
 }
 
@@ -109,13 +109,13 @@ func TestTripHandler_CreateTrip(t *testing.T) {
 		jsonData, _ := json.Marshal(requestBody)
 		req, _ := http.NewRequest("POST", "/api/v1/trips", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
 		// Assert
 		assert.Equal(t, http.StatusCreated, w.Code)
-		
+
 		var response domain.Trip
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -130,7 +130,7 @@ func TestTripHandler_CreateTrip(t *testing.T) {
 		// Execute
 		req, _ := http.NewRequest("POST", "/api/v1/trips", bytes.NewBuffer([]byte("invalid json")))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -154,7 +154,7 @@ func TestTripHandler_CreateTrip(t *testing.T) {
 		jsonData, _ := json.Marshal(requestBody)
 		req, _ := http.NewRequest("POST", "/api/v1/trips", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -170,13 +170,13 @@ func TestTripHandler_GetTrips(t *testing.T) {
 		// Setup
 		mockService := new(MockTripService)
 		router := setupTestRouter(mockService)
-		
+
 		expectedTrips := []domain.Trip{
 			{ID: 1, ClientName: "Acme Corp", Miles: 125.5},
 			{ID: 2, ClientName: "Beta Inc", Miles: 75.0},
 		}
-		
-		mockService.On("GetTrips", mock.Anything, 1, 10).Return(expectedTrips, int64(2), nil)
+
+		mockService.On("GetTrips", mock.Anything, 1, 10, domain.TripFilters{}).Return(expectedTrips, int64(2), nil)
 
 		// Execute
 		req, _ := http.NewRequest("GET", "/api/v1/trips", nil)
@@ -185,7 +185,7 @@ func TestTripHandler_GetTrips(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -201,9 +201,9 @@ func TestTripHandler_GetTrips(t *testing.T) {
 		// Setup
 		mockService := new(MockTripService)
 		router := setupTestRouter(mockService)
-		
+
 		expectedTrips := []domain.Trip{}
-		mockService.On("GetTrips", mock.Anything, 2, 5).Return(expectedTrips, int64(0), nil)
+		mockService.On("GetTrips", mock.Anything, 2, 5, domain.TripFilters{}).Return(expectedTrips, int64(0), nil)
 
 		// Execute
 		req, _ := http.NewRequest("GET", "/api/v1/trips?page=2&limit=5", nil)
@@ -220,8 +220,8 @@ func TestTripHandler_GetTrips(t *testing.T) {
 		// Setup
 		mockService := new(MockTripService)
 		router := setupTestRouter(mockService)
-		
-		mockService.On("GetTrips", mock.Anything, 1, 10).Return([]domain.Trip{}, int64(0), fmt.Errorf("database error"))
+
+		mockService.On("GetTrips", mock.Anything, 1, 10, domain.TripFilters{}).Return([]domain.Trip{}, int64(0), fmt.Errorf("database error"))
 
 		// Execute
 		req, _ := http.NewRequest("GET", "/api/v1/trips", nil)
@@ -246,7 +246,7 @@ func TestTripHandler_GetTripByID(t *testing.T) {
 			ClientName: "Acme Corp",
 			Miles:      125.5,
 		}
-		
+
 		mockService.On("GetTripByID", mock.Anything, uint(1)).Return(expectedTrip, nil)
 
 		// Execute
@@ -256,7 +256,7 @@ func TestTripHandler_GetTripByID(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response domain.Trip
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -319,13 +319,13 @@ func TestTripHandler_UpdateTrip(t *testing.T) {
 		jsonData, _ := json.Marshal(requestBody)
 		req, _ := http.NewRequest("PUT", "/api/v1/trips/1", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response domain.Trip
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -338,7 +338,7 @@ func TestTripHandler_UpdateTrip(t *testing.T) {
 		// Execute
 		req, _ := http.NewRequest("PUT", "/api/v1/trips/invalid", bytes.NewBuffer([]byte("{}")))
 		req.Header.Set("Content-Type", "application/json")
-		
+
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -398,7 +398,7 @@ func TestTripHandler_GetSummary(t *testing.T) {
 		// Setup
 		mockService := new(MockTripService)
 		router := setupTestRouter(mockService)
-		
+
 		expectedSummary := &domain.SummaryResponse{
 			Months: []domain.MonthlySummary{
 				{
@@ -410,7 +410,7 @@ func TestTripHandler_GetSummary(t *testing.T) {
 				},
 			},
 		}
-		
+
 		mockService.On("GetSummary", mock.Anything).Return(expectedSummary, nil)
 
 		// Execute
@@ -420,7 +420,7 @@ func TestTripHandler_GetSummary(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response domain.SummaryResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -434,7 +434,7 @@ func TestTripHandler_GetSummary(t *testing.T) {
 		// Setup
 		mockService := new(MockTripService)
 		router := setupTestRouter(mockService)
-		
+
 		mockService.On("GetSummary", mock.Anything).Return(nil, fmt.Errorf("database error"))
 
 		// Execute
@@ -445,6 +445,233 @@ func TestTripHandler_GetSummary(t *testing.T) {
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 
+		mockService.AssertExpectations(t)
+	})
+}
+
+func TestTripHandler_GetTrips_WithFilters(t *testing.T) {
+	t.Run("should handle search filter", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		expectedTrips := []domain.Trip{
+			{ID: 1, ClientName: "Acme Corp", Miles: 125.5},
+		}
+
+		expectedFilters := domain.TripFilters{
+			Search: "acme",
+		}
+
+		mockService.On("GetTrips", mock.Anything, 1, 10, expectedFilters).Return(expectedTrips, int64(1), nil)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?search=acme", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("should handle client filter", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		expectedTrips := []domain.Trip{
+			{ID: 1, ClientName: "Beta Inc", Miles: 75.0},
+		}
+
+		expectedFilters := domain.TripFilters{
+			Client: "Beta Inc",
+		}
+
+		mockService.On("GetTrips", mock.Anything, 1, 10, expectedFilters).Return(expectedTrips, int64(1), nil)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?client=Beta Inc", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("should handle date range filters", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		expectedTrips := []domain.Trip{}
+
+		expectedFilters := domain.TripFilters{
+			DateFrom: "2025-01-01",
+			DateTo:   "2025-01-31",
+		}
+
+		mockService.On("GetTrips", mock.Anything, 1, 10, expectedFilters).Return(expectedTrips, int64(0), nil)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?date_from=2025-01-01&date_to=2025-01-31", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("should handle miles range filters", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		expectedTrips := []domain.Trip{}
+
+		minMiles := 50.0
+		maxMiles := 200.0
+		expectedFilters := domain.TripFilters{
+			MinMiles: &minMiles,
+			MaxMiles: &maxMiles,
+		}
+
+		mockService.On("GetTrips", mock.Anything, 1, 10, expectedFilters).Return(expectedTrips, int64(0), nil)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?min_miles=50&max_miles=200", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("should handle combined filters", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		expectedTrips := []domain.Trip{}
+
+		minMiles := 100.0
+		expectedFilters := domain.TripFilters{
+			Search:   "client",
+			DateFrom: "2025-01-01",
+			MinMiles: &minMiles,
+		}
+
+		mockService.On("GetTrips", mock.Anything, 1, 10, expectedFilters).Return(expectedTrips, int64(0), nil)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?search=client&date_from=2025-01-01&min_miles=100", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
+
+	t.Run("should return error for invalid date format", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?date_from=invalid-date", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "date_from must be in YYYY-MM-DD format")
+	})
+
+	t.Run("should return error for invalid miles", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?min_miles=invalid", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "min_miles must be a non-negative number")
+	})
+
+	t.Run("should return error for negative miles", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?min_miles=-10", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "min_miles must be a non-negative number")
+	})
+
+	t.Run("should return error when min_miles > max_miles", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?min_miles=200&max_miles=100", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "min_miles cannot be greater than max_miles")
+	})
+
+	t.Run("should return error when date_from > date_to", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		// Execute
+		req, _ := http.NewRequest("GET", "/api/v1/trips?date_from=2025-01-31&date_to=2025-01-01", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "date_from cannot be after date_to")
+	})
+
+	t.Run("should trim whitespace from filters", func(t *testing.T) {
+		// Setup
+		mockService := new(MockTripService)
+		router := setupTestRouter(mockService)
+
+		expectedTrips := []domain.Trip{}
+
+		expectedFilters := domain.TripFilters{
+			Search: "test",
+			Client: "Acme Corp",
+		}
+
+		mockService.On("GetTrips", mock.Anything, 1, 10, expectedFilters).Return(expectedTrips, int64(0), nil)
+
+		// Execute - with extra whitespace
+		req, _ := http.NewRequest("GET", "/api/v1/trips?search= test &client= Acme Corp ", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		// Assert
+		assert.Equal(t, http.StatusOK, w.Code)
 		mockService.AssertExpectations(t)
 	})
 }

@@ -65,8 +65,13 @@ export default function SummaryCard() {
   }
 
 
+  // Calculate totals from all months
   const totalMiles = summary?.months?.reduce((sum, month) => sum + month.total_miles, 0) || 0
   const totalAmount = summary?.months?.reduce((sum, month) => sum + month.amount, 0) || 0
+  
+  // Only show empty state if no summary data exists at all
+  const hasNoData = !summary?.months || summary.months.length === 0
+  const hasNoTrips = hasNoData || totalMiles === 0
 
   return (
     <div className="bg-ctp-surface0 rounded-lg p-4 shadow-sm">
@@ -90,13 +95,19 @@ export default function SummaryCard() {
       {/* Monthly Breakdown */}
       <div className="space-y-2">
         <h3 className="text-sm font-medium text-ctp-text mb-2">Monthly Breakdown</h3>
-        {!summary?.months || summary.months.length === 0 || totalMiles === 0 ? (
+        {hasNoTrips ? (
           <div className="text-center py-6">
             <ChartBarIcon className="h-12 w-12 text-ctp-subtext0 mx-auto mb-3" />
-            <p className="text-ctp-subtext1 text-sm mb-2">No trips in the last 6 months</p>
-            <p className="text-ctp-subtext1 text-xs">
-              Add trips to see your mileage summary and tax deductions
+            <p className="text-ctp-subtext1 text-sm mb-2 font-medium">No trips recorded yet</p>
+            <p className="text-ctp-subtext1 text-xs mb-4">
+              Start tracking your business mileage to see tax deductions
             </p>
+            <div className="bg-ctp-base rounded-lg p-3 max-w-sm mx-auto">
+              <p className="text-xs text-ctp-subtext1 mb-1">💡 <strong className="text-ctp-text">Tip:</strong></p>
+              <p className="text-xs text-ctp-subtext1">
+                Use the "Quick Add" form above to record your first business trip
+              </p>
+            </div>
           </div>
         ) : (
           summary.months.map((month) => (

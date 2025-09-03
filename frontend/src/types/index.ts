@@ -70,6 +70,28 @@ export interface MessageResponse {
   message: string;
 }
 
+// Filter Types
+export type DateRangeFilter = 'today' | 'week' | 'month' | 'quarter' | '';
+export type MilesRangeFilter = '0-10' | '10-50' | '50-100' | '100+' | '';
+
+export interface TripFilters {
+  dateRange: DateRangeFilter;
+  clientFilter: string;
+  milesRange: MilesRangeFilter;
+  searchQuery: string;
+}
+
+export interface TripsQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  client?: string;
+  date_from?: string;
+  date_to?: string;
+  min_miles?: number;
+  max_miles?: number;
+}
+
 // UI Types
 export interface FormErrors {
   [key: string]: string;

@@ -173,8 +173,8 @@ describe('SummaryCard', () => {
     
     expect(screen.getByText('0.0')).toBeInTheDocument() // Total miles
     expect(screen.getByText('$0.00')).toBeInTheDocument() // Total amount
-    expect(screen.getByText('No trips in the last 6 months')).toBeInTheDocument()
-    expect(screen.getByText(/add trips to see your mileage summary/i)).toBeInTheDocument()
+    expect(screen.getByText('No trips recorded yet')).toBeInTheDocument()
+    expect(screen.getByText(/Start tracking your business mileage to see tax deductions/)).toBeInTheDocument()
   })
 
   it('handles months with zero miles correctly', () => {
@@ -253,6 +253,6 @@ describe('SummaryCard', () => {
     
     renderWithQueryClient(<SummaryCard />)
     
-    expect(screen.getByText('Add trips to see your mileage summary and tax deductions')).toBeInTheDocument()
+    expect(screen.getByText(/Start tracking your business mileage to see tax deductions/)).toBeInTheDocument()
   })
 })

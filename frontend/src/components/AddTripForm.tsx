@@ -4,12 +4,13 @@ import { useCreateTrip } from '../hooks/useTrips'
 import { useClientSuggestions } from '../hooks/useClients'
 import { useConnectionStatus } from '../hooks/useConnectionStatus'
 import { getApiErrorMessage } from '../utils/errorUtils'
+import { getTodayDateString } from '../utils/dateUtils'
 import type { CreateTripRequest, FormErrors } from '../types'
 
 export default function AddTripForm() {
   const [formData, setFormData] = useState<CreateTripRequest>({
     client_name: '',
-    trip_date: new Date().toISOString().split('T')[0], // Today's date
+    trip_date: getTodayDateString(), // Today's date
     miles: 0,
     notes: ''
   })
@@ -68,7 +69,7 @@ export default function AddTripForm() {
       onSuccess: () => {
         setFormData({
           client_name: '',
-          trip_date: new Date().toISOString().split('T')[0],
+          trip_date: getTodayDateString(),
           miles: 0,
           notes: ''
         })

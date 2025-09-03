@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { PencilIcon, TrashIcon, CheckIcon, XMarkIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
 import { useUpdateTrip, useDeleteTrip } from '../hooks/useTrips'
 import { getApiErrorMessage } from '../utils/errorUtils'
+import { formatTripDate, extractDateString } from '../utils/dateUtils'
 import type { Trip, UpdateTripRequest, FormErrors } from '../types'
 
 interface TripItemProps {
@@ -13,7 +14,7 @@ export default function TripItem({ trip }: TripItemProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [formData, setFormData] = useState<UpdateTripRequest>({
     client_name: trip.client_name,
-    trip_date: trip.trip_date,
+    trip_date: extractDateString(trip.trip_date),
     miles: trip.miles,
     notes: trip.notes
   })
@@ -50,7 +51,7 @@ export default function TripItem({ trip }: TripItemProps) {
     setIsEditing(true)
     setFormData({
       client_name: trip.client_name,
-      trip_date: trip.trip_date,
+      trip_date: extractDateString(trip.trip_date),
       miles: trip.miles,
       notes: trip.notes
     })
@@ -75,7 +76,7 @@ export default function TripItem({ trip }: TripItemProps) {
     setIsEditing(false)
     setFormData({
       client_name: trip.client_name,
-      trip_date: trip.trip_date,
+      trip_date: extractDateString(trip.trip_date),
       miles: trip.miles,
       notes: trip.notes
     })
@@ -90,14 +91,7 @@ export default function TripItem({ trip }: TripItemProps) {
     })
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString + 'T00:00:00')
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    })
-  }
+  // Removed formatDate function - using utility instead
 
   if (showDeleteConfirm) {
     return (
@@ -105,7 +99,7 @@ export default function TripItem({ trip }: TripItemProps) {
         <div className="text-center">
           <p className="text-ctp-text font-medium mb-2">Delete this trip?</p>
           <p className="text-ctp-subtext1 text-sm mb-4">
-            {trip.client_name} • {formatDate(trip.trip_date)} • {trip.miles} miles
+            {trip.client_name} • {formatTripDate(trip.trip_date)} • {trip.miles} miles
           </p>
           <div className="flex gap-2 justify-center">
             <button
@@ -219,7 +213,7 @@ export default function TripItem({ trip }: TripItemProps) {
   }
 
   return (
-    <div className="bg-ctp-base rounded-lg p-4 border border-ctp-surface1 hover:border-ctp-surface2 transition-colors">
+    <div data-testid="trip-item" className="bg-ctp-base rounded-lg p-4 border border-ctp-surface1 hover:border-ctp-surface2 transition-colors">
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
@@ -231,7 +225,7 @@ export default function TripItem({ trip }: TripItemProps) {
           </div>
           
           <div className="flex items-center gap-4 text-sm text-ctp-subtext1 mb-1">
-            <span>{formatDate(trip.trip_date)}</span>
+            <span>{formatTripDate(trip.trip_date)}</span>
             <span className="font-medium">{trip.miles} miles</span>
           </div>
           

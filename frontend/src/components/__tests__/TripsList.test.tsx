@@ -1,12 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { Trip } from '../../types'
 import TripsList from '../TripsList'
+import { renderWithProviders, mockTripsResponse } from '../../test/utils/testUtils'
+import {
+  mockUseTrips,
+  mockUseUpdateTrip,
+  mockUseDeleteTrip,
+  mockUseConnectionStatus,
+  resetAllMocks,
+  setLoadingState,
+  setErrorState,
+  setEmptyState,
+  setDisconnectedState
+} from '../../test/utils/mockHooks'
+
+interface MockTripItemProps {
+  trip: Trip
+  onEdit?: (trip: Trip) => void
+  onDelete?: (id: number) => void
+}
 
 // Mock TripItem component
 vi.mock('../TripItem', () => ({
-  default: ({ trip, onEdit, onDelete }: any) => (
+  default: ({ trip, onEdit, onDelete }: MockTripItemProps) => (
     <div data-testid={`trip-${trip.id}`}>
       <span>{trip.client_name}</span>
       <span>{trip.miles} miles</span>
@@ -16,84 +34,34 @@ vi.mock('../TripItem', () => ({
   ),
 }))
 
-// Mock hooks
-const mockTripsData = {
-  trips: [
-    {
-      id: 1,
-      client_name: 'Acme Corp',
-      trip_date: '2025-01-15',
-      miles: 125.5,
-      notes: 'Client meeting',
-      created_at: '2025-01-15T10:00:00Z',
-      updated_at: '2025-01-15T10:00:00Z',
-    },
-    {
-      id: 2,
-      client_name: 'Beta Inc',
-      trip_date: '2025-01-14',
-      miles: 75.0,
-      notes: 'Site visit',
-      created_at: '2025-01-14T14:30:00Z',
-      updated_at: '2025-01-14T14:30:00Z',
-    },
-  ],
-  total: 2,
-  page: 1,
-  limit: 10,
-  total_pages: 1,
-}
+// Mock LoadingSkeletons component
+vi.mock('../LoadingSkeletons', () => ({
+  TripItemSkeleton: () => <div data-testid="loading-skeleton">Loading...</div>,
+}))
 
+// Mock hooks with centralized mock functions
 vi.mock('../../hooks/useTrips', () => ({
-  useTrips: () => ({
-    data: mockTripsData,
-    isLoading: false,
-    isError: false,
-    error: null,
-  }),
-  useUpdateTrip: () => ({
-    mutate: vi.fn(),
-    isPending: false,
-  }),
-  useDeleteTrip: () => ({
-    mutate: vi.fn(),
-    isPending: false,
-  }),
+  useTrips: mockUseTrips,
+  useUpdateTrip: mockUseUpdateTrip,
+  useDeleteTrip: mockUseDeleteTrip,
 }))
 
 vi.mock('../../hooks/useConnectionStatus', () => ({
-  useConnectionStatus: () => ({
-    data: { connected: true },
-  }),
+  useConnectionStatus: mockUseConnectionStatus,
 }))
 
 vi.mock('../../utils/errorUtils', () => ({
-  getApiErrorMessage: (error: unknown) => 'Test error message',
+  getApiErrorMessage: () => 'Test error message',
 }))
-
-const createTestQueryClient = () => new QueryClient({
-  defaultOptions: {
-    queries: { retry: false },
-    mutations: { retry: false },
-  },
-})
-
-const renderWithQueryClient = (component: React.ReactElement) => {
-  const queryClient = createTestQueryClient()
-  return render(
-    <QueryClientProvider client={queryClient}>
-      {component}
-    </QueryClientProvider>
-  )
-}
 
 describe('TripsList', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    resetAllMocks()
   })
 
   it('renders trip items when data is available', () => {
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     expect(screen.getByTestId('trip-1')).toBeInTheDocument()
     expect(screen.getByTestId('trip-2')).toBeInTheDocument()
@@ -104,14 +72,9 @@ describe('TripsList', () => {
   })
 
   it('displays loading state', () => {
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useTrips = () => ({
-      data: undefined,
-      isLoading: true,
-      isError: false,
-      error: null,
-    })
+    setLoadingState()
     
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     expect(screen.getByText('Loading trips...')).toBeInTheDocument()
     // Should show loading skeletons
@@ -120,18 +83,10 @@ describe('TripsList', () => {
 
   it('displays error state with connection status', () => {
     const mockError = new Error('Cannot connect to server')
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useTrips = () => ({
-      data: undefined,
-      isLoading: false,
-      isError: true,
-      error: mockError,
-    })
+    setErrorState(mockError)
+    setDisconnectedState()
     
-    vi.mocked(vi.importActual('../../hooks/useConnectionStatus')).useConnectionStatus = () => ({
-      data: { connected: false },
-    })
-    
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     expect(screen.getByText('Failed to Load Trips')).toBeInTheDocument()
     expect(screen.getByText('Disconnected')).toBeInTheDocument()
@@ -139,14 +94,9 @@ describe('TripsList', () => {
   })
 
   it('displays empty state when no trips exist', () => {
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useTrips = () => ({
-      data: { ...mockTripsData, trips: [], total: 0 },
-      isLoading: false,
-      isError: false,
-      error: null,
-    })
+    setEmptyState()
     
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     expect(screen.getByText('No trips recorded yet')).toBeInTheDocument()
     expect(screen.getByText(/start tracking your business mileage/i)).toBeInTheDocument()
@@ -154,14 +104,15 @@ describe('TripsList', () => {
   })
 
   it('shows pagination when multiple pages exist', () => {
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useTrips = () => ({
-      data: { ...mockTripsData, total: 25, total_pages: 3 },
+    mockUseTrips.mockReturnValue({
+      data: { ...mockTripsResponse, total: 25, total_pages: 3 },
       isLoading: false,
       isError: false,
       error: null,
+      refetch: vi.fn(),
     })
     
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     expect(screen.getByText('Page 1 of 3')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /previous/i })).toBeInTheDocument()
@@ -170,14 +121,15 @@ describe('TripsList', () => {
 
   it('handles pagination navigation', async () => {
     const user = userEvent.setup()
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useTrips = () => ({
-      data: { ...mockTripsData, total: 25, total_pages: 3, page: 2 },
+    mockUseTrips.mockReturnValue({
+      data: { ...mockTripsResponse, total: 25, total_pages: 3, page: 2 },
       isLoading: false,
       isError: false,
       error: null,
+      refetch: vi.fn(),
     })
     
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     const nextButton = screen.getByRole('button', { name: /next/i })
     const prevButton = screen.getByRole('button', { name: /previous/i })
@@ -193,27 +145,29 @@ describe('TripsList', () => {
   })
 
   it('disables pagination buttons at boundaries', () => {
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useTrips = () => ({
-      data: { ...mockTripsData, total: 25, total_pages: 3, page: 1 },
+    mockUseTrips.mockReturnValue({
+      data: { ...mockTripsResponse, total: 25, total_pages: 3, page: 1 },
       isLoading: false,
       isError: false,
       error: null,
+      refetch: vi.fn(),
     })
     
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     const prevButton = screen.getByRole('button', { name: /previous/i })
     expect(prevButton).toBeDisabled()
     
     // Test last page
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useTrips = () => ({
-      data: { ...mockTripsData, total: 25, total_pages: 3, page: 3 },
+    mockUseTrips.mockReturnValue({
+      data: { ...mockTripsResponse, total: 25, total_pages: 3, page: 3 },
       isLoading: false,
       isError: false,
       error: null,
+      refetch: vi.fn(),
     })
     
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     const nextButton = screen.getByRole('button', { name: /next/i })
     expect(nextButton).toBeDisabled()
@@ -221,7 +175,7 @@ describe('TripsList', () => {
 
   it('handles trip editing', async () => {
     const user = userEvent.setup()
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     const editButton = screen.getAllByText('Edit')[0]
     await user.click(editButton)
@@ -232,16 +186,18 @@ describe('TripsList', () => {
 
   it('handles trip deletion with confirmation', async () => {
     const mockDeleteMutate = vi.fn()
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useDeleteTrip = () => ({
+    mockUseDeleteTrip.mockReturnValue({
       mutate: mockDeleteMutate,
       isPending: false,
+      isError: false,
+      error: null,
     })
     
     // Mock window.confirm
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     
     const user = userEvent.setup()
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     const deleteButton = screen.getAllByText('Delete')[0]
     await user.click(deleteButton)
@@ -254,16 +210,18 @@ describe('TripsList', () => {
 
   it('cancels deletion when user declines confirmation', async () => {
     const mockDeleteMutate = vi.fn()
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useDeleteTrip = () => ({
+    mockUseDeleteTrip.mockReturnValue({
       mutate: mockDeleteMutate,
       isPending: false,
+      isError: false,
+      error: null,
     })
     
     // Mock window.confirm to return false
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
     
     const user = userEvent.setup()
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     const deleteButton = screen.getAllByText('Delete')[0]
     await user.click(deleteButton)
@@ -275,14 +233,14 @@ describe('TripsList', () => {
   })
 
   it('displays total count information', () => {
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     expect(screen.getByText('2 trips total')).toBeInTheDocument()
   })
 
   it('shows refresh functionality', async () => {
     const user = userEvent.setup()
-    renderWithQueryClient(<TripsList />)
+    renderWithProviders(<TripsList />)
     
     const refreshButton = screen.getByRole('button', { name: /refresh/i })
     await user.click(refreshButton)

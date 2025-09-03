@@ -13,10 +13,10 @@ import (
 func setupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	
+
 	router.GET("/health", HealthHandler)
 	router.GET("/ready", ReadinessHandler)
-	
+
 	return router
 }
 
@@ -31,7 +31,7 @@ func TestHealthHandler(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response HealthResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -42,7 +42,7 @@ func TestHealthHandler(t *testing.T) {
 		// Execute multiple requests concurrently
 		numRequests := 10
 		responses := make(chan *httptest.ResponseRecorder, numRequests)
-		
+
 		for i := 0; i < numRequests; i++ {
 			go func() {
 				req, _ := http.NewRequest("GET", "/health", nil)
@@ -56,7 +56,7 @@ func TestHealthHandler(t *testing.T) {
 		for i := 0; i < numRequests; i++ {
 			w := <-responses
 			assert.Equal(t, http.StatusOK, w.Code)
-			
+
 			var response HealthResponse
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			assert.NoError(t, err)
@@ -73,11 +73,11 @@ func TestHealthHandler(t *testing.T) {
 		// Assert response structure
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, "application/json; charset=utf-8", w.Header().Get("Content-Type"))
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		// Check required fields
 		status, exists := response["status"]
 		assert.True(t, exists)
@@ -119,7 +119,7 @@ func TestReadinessHandler(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response ReadinessResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -135,11 +135,11 @@ func TestReadinessHandler(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response ReadinessResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		// Check database service is included
 		dbStatus, exists := response.Services["database"]
 		assert.True(t, exists)
@@ -150,7 +150,7 @@ func TestReadinessHandler(t *testing.T) {
 		// Execute multiple requests concurrently
 		numRequests := 10
 		responses := make(chan *httptest.ResponseRecorder, numRequests)
-		
+
 		for i := 0; i < numRequests; i++ {
 			go func() {
 				req, _ := http.NewRequest("GET", "/ready", nil)
@@ -164,7 +164,7 @@ func TestReadinessHandler(t *testing.T) {
 		for i := 0; i < numRequests; i++ {
 			w := <-responses
 			assert.Equal(t, http.StatusOK, w.Code)
-			
+
 			var response ReadinessResponse
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			assert.NoError(t, err)
@@ -182,16 +182,16 @@ func TestReadinessHandler(t *testing.T) {
 		// Assert response structure
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Equal(t, "application/json; charset=utf-8", w.Header().Get("Content-Type"))
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		// Check required fields
 		status, statusExists := response["status"]
 		assert.True(t, statusExists)
 		assert.Equal(t, "ready", status)
-		
+
 		services, servicesExist := response["services"]
 		assert.True(t, servicesExist)
 		assert.IsType(t, map[string]interface{}{}, services)
@@ -215,15 +215,15 @@ func TestReadinessHandler(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response ReadinessResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		// Validate services structure
 		assert.IsType(t, map[string]string{}, response.Services)
 		assert.Greater(t, len(response.Services), 0, "Should have at least one service check")
-		
+
 		// Each service should have a string status
 		for serviceName, serviceStatus := range response.Services {
 			assert.NotEmpty(t, serviceName, "Service name should not be empty")
@@ -235,20 +235,20 @@ func TestReadinessHandler(t *testing.T) {
 	t.Run("should be idempotent", func(t *testing.T) {
 		// Execute multiple times
 		var responses []ReadinessResponse
-		
+
 		for i := 0; i < 3; i++ {
 			req, _ := http.NewRequest("GET", "/ready", nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
-			
+
 			assert.Equal(t, http.StatusOK, w.Code)
-			
+
 			var response ReadinessResponse
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			assert.NoError(t, err)
 			responses = append(responses, response)
 		}
-		
+
 		// All responses should be identical
 		for i := 1; i < len(responses); i++ {
 			assert.Equal(t, responses[0].Status, responses[i].Status)
@@ -266,7 +266,7 @@ func TestHealthAndReadinessHandlers_Integration(t *testing.T) {
 		healthW := httptest.NewRecorder()
 		router.ServeHTTP(healthW, healthReq)
 		assert.Equal(t, http.StatusOK, healthW.Code)
-		
+
 		// Test readiness endpoint
 		readyReq, _ := http.NewRequest("GET", "/ready", nil)
 		readyW := httptest.NewRecorder()
@@ -279,20 +279,20 @@ func TestHealthAndReadinessHandlers_Integration(t *testing.T) {
 		healthReq, _ := http.NewRequest("GET", "/health", nil)
 		healthW := httptest.NewRecorder()
 		router.ServeHTTP(healthW, healthReq)
-		
+
 		var healthResponse HealthResponse
 		err := json.Unmarshal(healthW.Body.Bytes(), &healthResponse)
 		assert.NoError(t, err)
-		
+
 		// Get readiness response
 		readyReq, _ := http.NewRequest("GET", "/ready", nil)
 		readyW := httptest.NewRecorder()
 		router.ServeHTTP(readyW, readyReq)
-		
+
 		var readyResponse ReadinessResponse
 		err = json.Unmarshal(readyW.Body.Bytes(), &readyResponse)
 		assert.NoError(t, err)
-		
+
 		// Verify different formats
 		assert.NotEqual(t, healthResponse.Status, readyResponse.Status)
 		assert.Equal(t, "healthy", healthResponse.Status)

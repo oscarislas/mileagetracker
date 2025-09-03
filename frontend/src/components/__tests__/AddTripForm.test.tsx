@@ -1,58 +1,67 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import AddTripForm from '../AddTripForm'
+import { renderWithProviders } from '../../test/utils/testUtils'
+
+// Create mock functions directly in the test file to avoid hoisting issues
+const mockCreateTripMutate = vi.fn()
+const mockUseCreateTrip = vi.fn(() => ({
+  mutate: mockCreateTripMutate,
+  isPending: false,
+  isError: false,
+  error: null,
+}))
+
+const mockUseClientSuggestions = vi.fn(() => ({
+  data: { clients: [] },
+  isLoading: false,
+}))
+
+const mockUseConnectionStatus = vi.fn(() => ({
+  data: { connected: true },
+  isLoading: false,
+}))
 
 // Mock the hooks
 vi.mock('../../hooks/useTrips', () => ({
-  useCreateTrip: () => ({
-    mutate: vi.fn(),
-    isPending: false,
-    isError: false,
-    error: null,
-  }),
+  useCreateTrip: () => mockUseCreateTrip(),
 }))
 
 vi.mock('../../hooks/useClients', () => ({
-  useClientSuggestions: () => ({
-    data: { clients: [] },
-  }),
+  useClientSuggestions: () => mockUseClientSuggestions(),
 }))
 
 vi.mock('../../hooks/useConnectionStatus', () => ({
-  useConnectionStatus: () => ({
-    data: { connected: true },
-  }),
+  useConnectionStatus: () => mockUseConnectionStatus(),
 }))
 
 vi.mock('../../utils/errorUtils', () => ({
-  getApiErrorMessage: (error: unknown) => 'Test error message',
+  getApiErrorMessage: () => 'Test error message',
 }))
-
-const createTestQueryClient = () => new QueryClient({
-  defaultOptions: {
-    queries: { retry: false },
-    mutations: { retry: false },
-  },
-})
-
-const renderWithQueryClient = (component: React.ReactElement) => {
-  const queryClient = createTestQueryClient()
-  return render(
-    <QueryClientProvider client={queryClient}>
-      {component}
-    </QueryClientProvider>
-  )
-}
 
 describe('AddTripForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Reset to default values
+    mockUseCreateTrip.mockReturnValue({
+      mutate: mockCreateTripMutate,
+      isPending: false,
+      isError: false,
+      error: null,
+    })
+    mockUseClientSuggestions.mockReturnValue({
+      data: { clients: [] },
+      isLoading: false,
+    })
+    mockUseConnectionStatus.mockReturnValue({
+      data: { connected: true },
+      isLoading: false,
+    })
   })
 
   it('renders the form with all fields', () => {
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     expect(screen.getByRole('textbox', { name: /client name/i })).toBeInTheDocument()
     expect(screen.getByLabelText(/trip date/i)).toBeInTheDocument()
@@ -62,14 +71,14 @@ describe('AddTripForm', () => {
   })
 
   it('displays connection status when available', () => {
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     expect(screen.getByText('Connected')).toBeInTheDocument()
   })
 
   it('shows validation errors for required fields', async () => {
     const user = userEvent.setup()
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     const submitButton = screen.getByRole('button', { name: /add trip/i })
     await user.click(submitButton)
@@ -81,7 +90,7 @@ describe('AddTripForm', () => {
 
   it('validates client name length', async () => {
     const user = userEvent.setup()
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     const clientNameInput = screen.getByRole('textbox', { name: /client name/i })
     await user.type(clientNameInput, 'A'.repeat(31)) // 31 characters, over limit
@@ -96,7 +105,7 @@ describe('AddTripForm', () => {
 
   it('validates miles input', async () => {
     const user = userEvent.setup()
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     const clientNameInput = screen.getByRole('textbox', { name: /client name/i })
     const milesInput = screen.getByRole('spinbutton', { name: /miles driven/i })
@@ -114,7 +123,7 @@ describe('AddTripForm', () => {
   })
 
   it('sets today as default trip date', () => {
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     const dateInput = screen.getByLabelText(/trip date/i) as HTMLInputElement
     const today = new Date().toISOString().split('T')[0]
@@ -123,7 +132,7 @@ describe('AddTripForm', () => {
 
   it('can be collapsed and expanded', async () => {
     const user = userEvent.setup()
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     // Should be expanded by default
     expect(screen.getByRole('textbox', { name: /client name/i })).toBeInTheDocument()
@@ -146,7 +155,7 @@ describe('AddTripForm', () => {
 
   it('fills form fields correctly', async () => {
     const user = userEvent.setup()
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     const clientNameInput = screen.getByRole('textbox', { name: /client name/i })
     const milesInput = screen.getByRole('spinbutton', { name: /miles driven/i })
@@ -164,19 +173,15 @@ describe('AddTripForm', () => {
 
   it('handles form submission with valid data', async () => {
     const mockMutate = vi.fn()
-    
-    // Override the mock for this specific test
-    vi.doMock('../../hooks/useTrips', () => ({
-      useCreateTrip: () => ({
-        mutate: mockMutate,
-        isPending: false,
-        isError: false,
-        error: null,
-      }),
-    }))
+    mockUseCreateTrip.mockReturnValue({
+      mutate: mockMutate,
+      isPending: false,
+      isError: false,
+      error: null,
+    })
     
     const user = userEvent.setup()
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     const clientNameInput = screen.getByRole('textbox', { name: /client name/i })
     const milesInput = screen.getByRole('spinbutton', { name: /miles driven/i })
@@ -195,14 +200,14 @@ describe('AddTripForm', () => {
   })
 
   it('shows loading state during submission', () => {
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useCreateTrip = () => ({
+    mockUseCreateTrip.mockReturnValue({
       mutate: vi.fn(),
       isPending: true,
       isError: false,
       error: null,
     })
     
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     expect(screen.getByText('Adding Trip...')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /adding trip/i })).toBeDisabled()
@@ -210,14 +215,14 @@ describe('AddTripForm', () => {
 
   it('displays error message when submission fails', () => {
     const mockError = new Error('Network error')
-    vi.mocked(vi.importActual('../../hooks/useTrips')).useCreateTrip = () => ({
+    mockUseCreateTrip.mockReturnValue({
       mutate: vi.fn(),
       isPending: false,
       isError: true,
       error: mockError,
     })
     
-    renderWithQueryClient(<AddTripForm />)
+    renderWithProviders(<AddTripForm />)
     
     expect(screen.getByText('Test error message')).toBeInTheDocument()
   })

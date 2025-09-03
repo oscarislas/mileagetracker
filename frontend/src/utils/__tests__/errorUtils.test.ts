@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { isAxiosError, getErrorMessage, getApiErrorMessage } from '../errorUtils'
-import { AxiosError, AxiosHeaders } from 'axios'
+import { AxiosError, AxiosHeaders, InternalAxiosRequestConfig } from 'axios'
 
 describe('errorUtils', () => {
   describe('isAxiosError', () => {
@@ -57,7 +57,7 @@ describe('errorUtils', () => {
         data: { error: 'Invalid data' },
         statusText: 'Bad Request',
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)
@@ -70,7 +70,7 @@ describe('errorUtils', () => {
         data: {},
         statusText: 'Unauthorized',
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)
@@ -83,7 +83,7 @@ describe('errorUtils', () => {
         data: {},
         statusText: 'Forbidden',
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)
@@ -96,7 +96,7 @@ describe('errorUtils', () => {
         data: {},
         statusText: 'Not Found',
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)
@@ -109,7 +109,7 @@ describe('errorUtils', () => {
         data: {},
         statusText: 'Internal Server Error',
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)
@@ -129,7 +129,7 @@ describe('errorUtils', () => {
         data: { error: 'Custom error message' },
         statusText: 'Bad Request',
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)
@@ -150,7 +150,7 @@ describe('errorUtils', () => {
         },
         statusText: 'Bad Request',
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)
@@ -164,7 +164,7 @@ describe('errorUtils', () => {
         data: {},
         statusText: "I'm a teapot",
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)
@@ -194,7 +194,7 @@ describe('errorUtils', () => {
         },
         statusText: 'Internal Server Error',
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)
@@ -207,7 +207,7 @@ describe('errorUtils', () => {
         data: 'This is not JSON',
         statusText: 'OK',
         headers: new AxiosHeaders(),
-        config: {} as any
+        config: {} as InternalAxiosRequestConfig
       })
       
       const result = getApiErrorMessage(axiosError)

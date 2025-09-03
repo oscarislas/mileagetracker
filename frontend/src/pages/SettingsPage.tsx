@@ -10,7 +10,7 @@ export default function SettingsPage() {
   const [mileageRate, setMileageRate] = useState('')
   const [error, setError] = useState('')
 
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading, isError, error: queryError } = useQuery({
     queryKey: ['settings'],
     queryFn: async () => {
       const response = await apiClient.get<SettingsResponse>('/api/v1/settings')
@@ -57,6 +57,47 @@ export default function SettingsPage() {
       <div className="pb-20 px-4 pt-4">
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-ctp-blue border-t-transparent mx-auto"></div>
+          <p className="text-ctp-subtext1 text-sm mt-2">Loading settings...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="pb-20 px-4 pt-4 space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-ctp-text mb-2">Settings</h1>
+          <p className="text-ctp-subtext1">Configure your mileage tracking preferences</p>
+        </div>
+
+        <div className="bg-ctp-surface0 rounded-lg p-6 shadow-sm text-center">
+          <div className="text-ctp-red mb-4">
+            <svg className="h-12 w-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="text-lg font-medium text-ctp-text mb-2">Unable to load settings</h3>
+            <p className="text-ctp-subtext1 text-sm mb-4">
+              {getApiErrorMessage(queryError) || 'Failed to connect to the server. Please check your connection.'}
+            </p>
+          </div>
+          
+          <div className="bg-ctp-surface1 rounded-lg p-4 text-left">
+            <h4 className="font-medium text-ctp-text mb-2">💡 Default Settings:</h4>
+            <p className="text-sm text-ctp-subtext1 mb-2">
+              • Mileage Rate: $0.67 per mile (2024 IRS standard rate)
+            </p>
+            <p className="text-xs text-ctp-subtext1">
+              Settings will be available once the server connection is restored.
+            </p>
+          </div>
+          
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-ctp-blue hover:bg-ctp-blue/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     )

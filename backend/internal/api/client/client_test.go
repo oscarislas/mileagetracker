@@ -35,14 +35,14 @@ func (m *MockClientService) GetSuggestions(ctx context.Context, query string) ([
 func setupTestRouter(clientService *MockClientService) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
-	
+
 	handler := NewHandler(clientService)
-	
+
 	api := router.Group("/api/v1")
 	{
 		api.GET("/clients/suggestions", handler.GetSuggestions)
 	}
-	
+
 	return router
 }
 
@@ -57,7 +57,7 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 			{ID: 2, Name: "Acme Industries"},
 			{ID: 3, Name: "Acme Solutions"},
 		}
-		
+
 		mockService.On("GetSuggestions", mock.Anything, "acme").Return(expectedClients, nil)
 
 		// Execute
@@ -67,11 +67,11 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		clients, ok := response["clients"].([]interface{})
 		assert.True(t, ok)
 		assert.Len(t, clients, 3)
@@ -91,11 +91,11 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		clients, ok := response["clients"].([]interface{})
 		assert.True(t, ok)
 		assert.Len(t, clients, 0)
@@ -108,7 +108,7 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 		expectedClients := []domain.Client{
 			{ID: 1, Name: "Beta Inc"},
 		}
-		
+
 		mockService.On("GetSuggestions", mock.Anything, "  beta  ").Return(expectedClients, nil)
 
 		// Execute
@@ -118,11 +118,11 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		clients, ok := response["clients"].([]interface{})
 		assert.True(t, ok)
 		assert.Len(t, clients, 1)
@@ -142,11 +142,11 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		clients, ok := response["clients"].([]interface{})
 		assert.True(t, ok)
 		assert.Len(t, clients, 0)
@@ -160,7 +160,7 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 		expectedClients := []domain.Client{
 			{ID: 1, Name: "Acme & Co."},
 		}
-		
+
 		mockService.On("GetSuggestions", mock.Anything, queryWithSpecialChars).Return(expectedClients, nil)
 
 		// Execute
@@ -170,11 +170,11 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		clients, ok := response["clients"].([]interface{})
 		assert.True(t, ok)
 		assert.Len(t, clients, 1)
@@ -202,7 +202,7 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 		expectedClients := []domain.Client{
 			{ID: 1, Name: "ACME Corporation"},
 		}
-		
+
 		mockService.On("GetSuggestions", mock.Anything, "ACME").Return(expectedClients, nil)
 
 		// Execute
@@ -212,11 +212,11 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		clients, ok := response["clients"].([]interface{})
 		assert.True(t, ok)
 		assert.Len(t, clients, 1)
@@ -228,7 +228,7 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 		// Setup
 		longQuery := "this is a very long client name that might be used for testing purposes and edge cases"
 		expectedClients := []domain.Client{}
-		
+
 		mockService.On("GetSuggestions", mock.Anything, longQuery).Return(expectedClients, nil)
 
 		// Execute
@@ -238,11 +238,11 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		clients, ok := response["clients"].([]interface{})
 		assert.True(t, ok)
 		assert.Len(t, clients, 0)
@@ -259,7 +259,7 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 				Name: fmt.Sprintf("Client %d", i),
 			})
 		}
-		
+
 		mockService.On("GetSuggestions", mock.Anything, "client").Return(expectedClients, nil)
 
 		// Execute
@@ -269,11 +269,11 @@ func TestClientHandler_GetSuggestions(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		
+
 		clients, ok := response["clients"].([]interface{})
 		assert.True(t, ok)
 		assert.Len(t, clients, 10) // Should be limited to 10 suggestions

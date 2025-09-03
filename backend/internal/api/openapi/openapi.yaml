@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Mileage Tracker API
-  description: API for tracking vehicle mileage and expenses
+  description: API for tracking vehicle mileage and expenses for tax deductions
   version: 1.0.0
   contact:
     name: API Support
@@ -47,20 +47,231 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReadinessResponse'
 
-  /api/v1/date:
-    get:
-      summary: Current date endpoint
-      description: Get the current date from the server
-      operationId: getCurrentDate
+  /api/v1/trips:
+    post:
+      summary: Create a new trip
+      description: Create a new mileage trip entry
+      operationId: createTrip
       tags:
-        - Test
+        - Trips
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTripRequest'
       responses:
-        '200':
-          description: Current date response
+        '201':
+          description: Trip created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DateResponse'
+                $ref: '#/components/schemas/Trip'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: Get trips
+      description: Retrieve trips with pagination
+      operationId: getTrips
+      tags:
+        - Trips
+      parameters:
+        - name: page
+          in: query
+          description: Page number (default 1)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of trips per page (default 10, max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Trips retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripsResponse'
+
+  /api/v1/trips/{id}:
+    get:
+      summary: Get a trip by ID
+      description: Retrieve a specific trip by its ID
+      operationId: getTripByID
+      tags:
+        - Trips
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Trip ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Trip retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Update a trip
+      description: Update an existing trip
+      operationId: updateTrip
+      tags:
+        - Trips
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Trip ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTripRequest'
+      responses:
+        '200':
+          description: Trip updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a trip
+      description: Delete an existing trip
+      operationId: deleteTrip
+      tags:
+        - Trips
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Trip ID
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Trip deleted successfully
+        '404':
+          description: Trip not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/trips/summary:
+    get:
+      summary: Get trip summary
+      description: Get 6-month summary of trips and expenses
+      operationId: getTripSummary
+      tags:
+        - Trips
+      responses:
+        '200':
+          description: Summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SummaryResponse'
+
+  /api/v1/clients:
+    get:
+      summary: Get client suggestions
+      description: Get client name suggestions for autocomplete
+      operationId: getClientSuggestions
+      tags:
+        - Clients
+      parameters:
+        - name: q
+          in: query
+          description: Search query for client names
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Client suggestions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientSuggestionsResponse'
+
+  /api/v1/settings:
+    get:
+      summary: Get settings
+      description: Get application settings
+      operationId: getSettings
+      tags:
+        - Settings
+      responses:
+        '200':
+          description: Settings retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsResponse'
+
+    put:
+      summary: Update settings
+      description: Update application settings
+      operationId: updateSettings
+      tags:
+        - Settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        '200':
+          description: Settings updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingsResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
@@ -92,22 +303,248 @@ components:
           example:
             database: healthy
 
-    DateResponse:
+    Trip:
       type: object
       required:
-        - date
-        - formatted_date
+        - id
+        - client_name
+        - trip_date
+        - miles
+        - created_at
+        - updated_at
       properties:
-        date:
+        id:
+          type: integer
+          example: 1
+        client_id:
+          type: integer
+          nullable: true
+          example: 1
+        client_name:
+          type: string
+          maxLength: 30
+          example: "Acme Corp"
+        trip_date:
+          type: string
+          format: date
+          example: "2025-01-15"
+        miles:
+          type: number
+          format: float
+          minimum: 0
+          example: 125.5
+        notes:
+          type: string
+          example: "Client meeting downtown"
+        created_at:
           type: string
           format: date-time
-          example: "2024-01-01T12:00:00Z"
-        formatted_date:
+          example: "2025-01-15T10:30:00Z"
+        updated_at:
           type: string
-          example: "January 1, 2024"
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    CreateTripRequest:
+      type: object
+      required:
+        - client_name
+        - trip_date
+        - miles
+      properties:
+        client_name:
+          type: string
+          maxLength: 30
+          example: "Acme Corp"
+        trip_date:
+          type: string
+          format: date
+          example: "2025-01-15"
+        miles:
+          type: number
+          format: float
+          minimum: 0
+          example: 125.5
+        notes:
+          type: string
+          example: "Client meeting downtown"
+
+    UpdateTripRequest:
+      type: object
+      required:
+        - client_name
+        - trip_date
+        - miles
+      properties:
+        client_name:
+          type: string
+          maxLength: 30
+          example: "Acme Corp"
+        trip_date:
+          type: string
+          format: date
+          example: "2025-01-15"
+        miles:
+          type: number
+          format: float
+          minimum: 0
+          example: 125.5
+        notes:
+          type: string
+          example: "Client meeting downtown"
+
+    TripsResponse:
+      type: object
+      required:
+        - trips
+        - total
+        - page
+        - limit
+        - total_pages
+      properties:
+        trips:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trip'
+        total:
+          type: integer
+          example: 45
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        total_pages:
+          type: integer
+          example: 5
+
+    MonthlySummary:
+      type: object
+      required:
+        - month
+        - year
+        - month_num
+        - total_miles
+        - amount
+      properties:
+        month:
+          type: string
+          example: "January 2025"
+        year:
+          type: integer
+          example: 2025
+        month_num:
+          type: integer
+          minimum: 1
+          maximum: 12
+          example: 1
+        total_miles:
+          type: number
+          format: float
+          example: 145.50
+        amount:
+          type: number
+          format: float
+          example: 97.49
+
+    SummaryResponse:
+      type: object
+      required:
+        - months
+      properties:
+        months:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonthlySummary'
+          maxItems: 6
+
+    Client:
+      type: object
+      required:
+        - id
+        - name
+        - created_at
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          maxLength: 30
+          example: "Acme Corp"
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-01-15T10:30:00Z"
+
+    ClientSuggestionsResponse:
+      type: object
+      required:
+        - clients
+      properties:
+        clients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Client'
+
+    SettingsResponse:
+      type: object
+      required:
+        - mileage_rate
+      properties:
+        mileage_rate:
+          type: number
+          format: float
+          minimum: 0
+          example: 0.67
+
+    UpdateSettingsRequest:
+      type: object
+      required:
+        - mileage_rate
+      properties:
+        mileage_rate:
+          type: number
+          format: float
+          minimum: 0
+          example: 0.67
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: "Invalid request data"
+        code:
+          type: string
+          example: "BAD_REQUEST"
+        details:
+          type: object
+          description: "Additional error details, structure varies by error type"
+          example:
+            validation_errors:
+              - field: "miles"
+                value: "-5"
+                message: "Miles must be non-negative"
+
+    MessageResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "Operation completed successfully"
 
 tags:
   - name: Health
     description: Health check endpoints
-  - name: Test
-    description: Test endpoints
+  - name: Trips
+    description: Trip management endpoints
+  - name: Clients
+    description: Client management endpoints
+  - name: Settings
+    description: Application settings endpoints

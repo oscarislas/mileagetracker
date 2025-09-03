@@ -1,0 +1,65 @@
+import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import Navigation from '../Navigation'
+
+const createTestQueryClient = () => {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+}
+
+const renderWithProviders = (component: React.ReactElement, initialPath = '/') => {
+  const queryClient = createTestQueryClient()
+  
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[initialPath]}>
+        {component}
+      </MemoryRouter>
+    </QueryClientProvider>
+  )
+}
+
+describe('Navigation', () => {
+  test('renders trips and settings navigation items', () => {
+    renderWithProviders(<Navigation />)
+    
+    expect(screen.getByText('Trips')).toBeInTheDocument()
+    expect(screen.getByText('Settings')).toBeInTheDocument()
+  })
+
+  test('highlights trips tab when on trips page', () => {
+    renderWithProviders(<Navigation />, '/')
+    
+    const tripsLink = screen.getByRole('link', { name: /trips/i })
+    expect(tripsLink).toHaveClass('text-ctp-blue')
+  })
+
+  test('highlights settings tab when on settings page', () => {
+    renderWithProviders(<Navigation />, '/settings')
+    
+    const settingsLink = screen.getByRole('link', { name: /settings/i })
+    expect(settingsLink).toHaveClass('text-ctp-blue')
+  })
+
+  test('navigation links have correct href attributes', () => {
+    renderWithProviders(<Navigation />)
+    
+    const tripsLink = screen.getByRole('link', { name: /trips/i })
+    const settingsLink = screen.getByRole('link', { name: /settings/i })
+    
+    expect(tripsLink).toHaveAttribute('href', '/')
+    expect(settingsLink).toHaveAttribute('href', '/settings')
+  })
+
+  test('navigation has proper mobile-friendly styling', () => {
+    renderWithProviders(<Navigation />)
+    
+    const nav = screen.getByRole('navigation')
+    expect(nav).toHaveClass('fixed', 'bottom-0', 'left-0', 'right-0')
+  })
+})

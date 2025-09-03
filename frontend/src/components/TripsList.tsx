@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon, ListBulletIcon, WifiIcon } from '@heroicons/react/24/outline'
 import { useTrips } from '../hooks/useTrips'
 import { useConnectionStatus } from '../hooks/useConnectionStatus'
-import TripItem from './TripItem'
 import EnhancedTripItem from './EnhancedTripItem'
 import { TripListSkeleton, TripsEmptyState, ConnectionErrorState } from './LoadingSkeletons'
 import type { TripFilters } from '../types'
@@ -125,11 +124,7 @@ export default function TripsList({ enhanced = false, showPagination = true, lim
         <>
           <div className={enhanced ? "space-y-3" : "space-y-2"}>
             {trips.map((trip) => (
-              enhanced ? (
-                <EnhancedTripItem key={trip.id} trip={trip} />
-              ) : (
-                <TripItem key={trip.id} trip={trip} />
-              )
+              <EnhancedTripItem key={trip.id} trip={trip} />
             ))}
           </div>
 

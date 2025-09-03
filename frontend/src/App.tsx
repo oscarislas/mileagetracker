@@ -1,7 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
-import EnhancedNavigation from './components/EnhancedNavigation'
+import Navigation from './components/Navigation'
 import EnhancedTripsPage from './pages/EnhancedTripsPage'
-import TripsPage from './pages/TripsPage'
 import SummaryPage from './pages/SummaryPage'
 import SettingsPage from './pages/SettingsPage'
 import './App.css'
@@ -12,11 +11,10 @@ function App() {
       <Routes>
         <Route path="/" element={<EnhancedTripsPage />} />
         <Route path="/trips" element={<EnhancedTripsPage />} />
-        <Route path="/trips/simple" element={<TripsPage />} />
         <Route path="/summary" element={<SummaryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Routes>
-      <EnhancedNavigation />
+      <Navigation />
     </div>
   )
 }

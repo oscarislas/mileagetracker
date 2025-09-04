@@ -89,10 +89,13 @@ export function formatTripDateRelative(dateString: string): string {
     // Get today's date string for comparison
     const todayString = getTodayDateString();
 
-    // Get yesterday's date string
+    // Get yesterday's date string (local date)
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayString = yesterday.toISOString().split("T")[0];
+    const yesterdayYear = yesterday.getFullYear();
+    const yesterdayMonth = String(yesterday.getMonth() + 1).padStart(2, "0");
+    const yesterdayDay = String(yesterday.getDate()).padStart(2, "0");
+    const yesterdayString = `${yesterdayYear}-${yesterdayMonth}-${yesterdayDay}`;
 
     // Extract just the date part from the input for comparison
     const inputDateString = dateString.includes("T")
@@ -181,9 +184,12 @@ export function extractDateString(dateInput: string): string {
 }
 
 /**
- * Gets today's date in YYYY-MM-DD format
+ * Gets today's date in YYYY-MM-DD format (local date, not UTC)
  */
 export function getTodayDateString(): string {
   const today = new Date();
-  return today.toISOString().split("T")[0];
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`; // Returns local date
 }

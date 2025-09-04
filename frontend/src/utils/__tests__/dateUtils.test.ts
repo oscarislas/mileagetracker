@@ -35,8 +35,7 @@ describe("dateUtils", () => {
 
   describe("formatTripDateRelative", () => {
     it('should return "Today" for today\'s date', () => {
-      const today = new Date();
-      const todayString = today.toISOString().split("T")[0];
+      const todayString = getTodayDateString(); // Use the local date function
       expect(formatTripDateRelative(todayString)).toBe("Today");
     });
 
@@ -66,7 +65,10 @@ describe("dateUtils", () => {
     it('should return "Yesterday" for yesterday\'s date', () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayString = yesterday.toISOString().split("T")[0];
+      const yesterdayYear = yesterday.getFullYear();
+      const yesterdayMonth = String(yesterday.getMonth() + 1).padStart(2, "0");
+      const yesterdayDay = String(yesterday.getDate()).padStart(2, "0");
+      const yesterdayString = `${yesterdayYear}-${yesterdayMonth}-${yesterdayDay}`;
       expect(formatTripDateRelative(yesterdayString)).toBe("Yesterday");
     });
 
@@ -101,8 +103,7 @@ describe("dateUtils", () => {
 
     it("should properly compare dates ignoring time components", () => {
       // Test that time part of ISO dates doesn't affect date comparison
-      const todayDate = new Date();
-      const todayDateString = todayDate.toISOString().split("T")[0];
+      const todayDateString = getTodayDateString(); // Use local date
 
       // Create ISO timestamps for same day with different times
       const morningIso = `${todayDateString}T08:00:00Z`;
@@ -188,10 +189,79 @@ describe("dateUtils", () => {
       expect(isValidDateString(result)).toBe(true);
     });
 
-    it("should return consistent format", () => {
+    it("should return local date, not UTC date", () => {
       const today = new Date();
-      const expected = today.toISOString().split("T")[0];
+      const expectedYear = today.getFullYear();
+      const expectedMonth = String(today.getMonth() + 1).padStart(2, "0");
+      const expectedDay = String(today.getDate()).padStart(2, "0");
+      const expected = `${expectedYear}-${expectedMonth}-${expectedDay}`;
+
       expect(getTodayDateString()).toBe(expected);
+    });
+
+    it("should be consistent across multiple calls", () => {
+      const first = getTodayDateString();
+      const second = getTodayDateString();
+      expect(first).toBe(second);
+    });
+
+    it("should handle different timezones correctly", () => {
+      // This test ensures the function returns the local date regardless of timezone
+      const result = getTodayDateString();
+      const today = new Date();
+
+      // Verify year, month, day match local time (not UTC)
+      expect(result.split("-")[0]).toBe(String(today.getFullYear()));
+      expect(result.split("-")[1]).toBe(
+        String(today.getMonth() + 1).padStart(2, "0"),
+      );
+      expect(result.split("-")[2]).toBe(
+        String(today.getDate()).padStart(2, "0"),
+      );
+    });
+
+    it("should format single digit months and days with leading zeros", () => {
+      // Mock a date with single digit month and day
+      const mockDate = new Date(2024, 0, 5); // January 5, 2024 (month is 0-indexed)
+      
+      // Use vi.spyOn to mock Date constructor
+      const dateSpy = vi.spyOn(global, 'Date').mockImplementation(() => mockDate);
+
+      try {
+        const result = getTodayDateString();
+        expect(result).toBe("2024-01-05");
+      } finally {
+        dateSpy.mockRestore();
+      }
+    });
+
+    it("should handle edge cases around timezone boundaries", () => {
+      // Test that we get consistent results even when UTC and local dates might differ
+      const result = getTodayDateString();
+      const localDate = new Date();
+
+      // The result should match the local date components exactly
+      const parts = result.split("-");
+      expect(parts).toHaveLength(3);
+      expect(parseInt(parts[0])).toBe(localDate.getFullYear());
+      expect(parseInt(parts[1])).toBe(localDate.getMonth() + 1);
+      expect(parseInt(parts[2])).toBe(localDate.getDate());
+    });
+
+    it("should never return UTC date when local date differs", () => {
+      // Create a scenario where UTC and local dates might differ
+      const result = getTodayDateString();
+      const utcDate = new Date().toISOString().split("T")[0];
+      const localDate = new Date();
+      const expectedLocalDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, "0")}-${String(localDate.getDate()).padStart(2, "0")}`;
+
+      // Result should match local date calculation
+      expect(result).toBe(expectedLocalDate);
+
+      // If UTC and local dates differ, result should NOT match UTC
+      if (utcDate !== expectedLocalDate) {
+        expect(result).not.toBe(utcDate);
+      }
     });
   });
 

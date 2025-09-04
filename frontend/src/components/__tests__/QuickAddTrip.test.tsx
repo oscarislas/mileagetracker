@@ -315,4 +315,29 @@ describe("QuickAddTrip", () => {
     expect(milesInput).toHaveAttribute("type", "number");
     expect(dateInput).toHaveAttribute("type", "date");
   });
+
+  it("defaults to today's local date, not UTC date", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<QuickAddTrip />);
+
+    // Navigate to details step to see the date input
+    await user.click(screen.getByRole("button", { name: /quick add trip/i }));
+    await user.type(screen.getByLabelText(/who did you visit/i), "Test Client");
+    await user.click(screen.getByRole("button", { name: /next/i }));
+
+    const dateInput = screen.getByLabelText(/date/i) as HTMLInputElement;
+
+    // Calculate expected local date
+    const today = new Date();
+    const expectedLocalDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+    // The date input should have today's local date as its value
+    expect(dateInput.value).toBe(expectedLocalDate);
+
+    // Verify it's not using UTC date (which could be different near timezone boundaries)
+    const utcDate = today.toISOString().split("T")[0];
+    if (utcDate !== expectedLocalDate) {
+      expect(dateInput.value).not.toBe(utcDate);
+    }
+  });
 });

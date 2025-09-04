@@ -43,9 +43,32 @@ test.describe("Navigation", () => {
     await page.goto("/");
 
     // FAB should be visible
-    const fab = page.locator("button").filter({ hasText: "" }).first(); // Plus icon button
+    const fab = page.locator('button[aria-label="Quick add trip"]');
     await expect(fab).toBeVisible();
     await expect(fab).toHaveClass(/bg-gradient-to-r/);
+  });
+
+  test("should open quick add modal from FAB", async ({ page }) => {
+    await page.goto("/");
+
+    // Click the FAB
+    await page.click('button[aria-label="Quick add trip"]');
+
+    // Modal should open
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Quick Add Trip" }),
+    ).toBeVisible();
+
+    // Should have proper modal attributes
+    await expect(page.getByRole("dialog")).toHaveAttribute(
+      "aria-modal",
+      "true",
+    );
+
+    // Close modal for cleanup
+    await page.click('button[aria-label="Close modal"]');
+    await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 
   test("should handle direct URL navigation", async ({ page }) => {
@@ -75,7 +98,7 @@ test.describe("Navigation", () => {
     await expect(navItems).toHaveCount(3); // Trips, Summary, Settings
 
     // FAB should be visible on mobile
-    const fab = page.locator("button").filter({ hasText: "" }).first();
+    const fab = page.locator('button[aria-label="Quick add trip"]');
     await expect(fab).toBeVisible();
   });
 

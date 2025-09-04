@@ -1,3 +1,5 @@
+// Tests for the QuickAddTrip component, which now serves as a wrapper around QuickAddTripForm
+// These tests ensure backward compatibility after the refactoring
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

@@ -223,9 +223,11 @@ describe("dateUtils", () => {
     it("should format single digit months and days with leading zeros", () => {
       // Mock a date with single digit month and day
       const mockDate = new Date(2024, 0, 5); // January 5, 2024 (month is 0-indexed)
-      
+
       // Use vi.spyOn to mock Date constructor
-      const dateSpy = vi.spyOn(global, 'Date').mockImplementation(() => mockDate);
+      const dateSpy = vi
+        .spyOn(global, "Date")
+        .mockImplementation(() => mockDate);
 
       try {
         const result = getTodayDateString();

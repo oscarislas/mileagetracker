@@ -4,17 +4,49 @@ import {
   CogIcon,
   ChartBarIcon,
   PlusIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import {
   HomeIcon as HomeIconSolid,
   CogIcon as CogIconSolid,
   ChartBarIcon as ChartBarIconSolid,
 } from "@heroicons/react/24/solid";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import QuickAddTripForm from "./QuickAddTripForm";
 
 export default function Navigation() {
   const location = useLocation();
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && showQuickAdd) {
+        setShowQuickAdd(false);
+      }
+    };
+
+    if (showQuickAdd) {
+      document.addEventListener("keydown", handleEscape);
+      // Prevent body scrolling when modal is open
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [showQuickAdd]);
+
+  const handleCloseModal = () => {
+    setShowQuickAdd(false);
+  };
+
+  const handleTripSuccess = () => {
+    setShowQuickAdd(false);
+  };
 
   const isTrips = location.pathname === "/" || location.pathname === "/trips";
   const isSettings = location.pathname === "/settings";
@@ -74,7 +106,8 @@ export default function Navigation() {
           {/* Quick Add FAB */}
           <button
             onClick={() => setShowQuickAdd(true)}
-            className="bg-gradient-to-r from-ctp-blue to-ctp-sapphire text-white p-3 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 active:scale-95"
+            className="bg-gradient-to-r from-ctp-blue to-ctp-sapphire text-white p-3 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 active:scale-95 focus:ring-2 focus:ring-ctp-blue focus:ring-offset-2 focus:outline-none"
+            aria-label="Quick add trip"
           >
             <PlusIcon className="h-6 w-6" />
           </button>
@@ -83,33 +116,42 @@ export default function Navigation() {
 
       {/* Quick Add Modal Overlay */}
       {showQuickAdd && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end md:items-center justify-center p-4"
+          onClick={(e) => {
+            // Close modal when clicking the backdrop
+            if (e.target === e.currentTarget) {
+              handleCloseModal();
+            }
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
           <div className="bg-ctp-base rounded-t-xl md:rounded-xl w-full max-w-md max-h-[80vh] overflow-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-ctp-text">
+                <h2
+                  id="modal-title"
+                  className="text-lg font-semibold text-ctp-text"
+                >
                   Quick Add Trip
                 </h2>
                 <button
-                  onClick={() => setShowQuickAdd(false)}
-                  className="p-2 text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 rounded-lg"
+                  onClick={handleCloseModal}
+                  className="p-2 text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 rounded-lg focus:ring-2 focus:ring-ctp-blue focus:outline-none"
+                  aria-label="Close modal"
                 >
-                  ×
+                  <XMarkIcon className="h-5 w-5" />
                 </button>
               </div>
 
-              {/* Quick Add Form would go here */}
-              <div className="space-y-4">
-                <p className="text-ctp-subtext1 text-sm">
-                  Quick add functionality would be implemented here
-                </p>
-                <button
-                  onClick={() => setShowQuickAdd(false)}
-                  className="w-full bg-ctp-blue text-white py-3 rounded-lg font-medium"
-                >
-                  Close for now
-                </button>
-              </div>
+              <QuickAddTripForm
+                mode="modal"
+                showCollapseState={false}
+                onSuccess={handleTripSuccess}
+                onCancel={handleCloseModal}
+              />
             </div>
           </div>
         </div>

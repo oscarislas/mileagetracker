@@ -89,12 +89,13 @@ export default function QuickAddTrip() {
       {step === 'client' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-ctp-text mb-2">
+            <label htmlFor="client-name-input" className="block text-sm font-medium text-ctp-text mb-2">
               Who did you visit?
             </label>
             <div className="relative">
               <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-ctp-subtext1" />
               <input
+                id="client-name-input"
                 ref={clientInputRef}
                 type="text"
                 value={formData.client_name}
@@ -159,12 +160,13 @@ export default function QuickAddTrip() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-ctp-text mb-2">
+              <label htmlFor="miles-input" className="block text-sm font-medium text-ctp-text mb-2">
                 Miles
               </label>
               <div className="relative">
                 <TruckIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-ctp-subtext1" />
                 <input
+                  id="miles-input"
                   ref={milesInputRef}
                   type="number"
                   step="0.1"
@@ -184,10 +186,11 @@ export default function QuickAddTrip() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-ctp-text mb-2">
+              <label htmlFor="date-input" className="block text-sm font-medium text-ctp-text mb-2">
                 Date
               </label>
               <input
+                id="date-input"
                 type="date"
                 value={formData.trip_date}
                 onChange={(e) => setFormData({ ...formData, trip_date: e.target.value })}
@@ -197,10 +200,11 @@ export default function QuickAddTrip() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ctp-text mb-2">
+            <label htmlFor="notes-input" className="block text-sm font-medium text-ctp-text mb-2">
               Notes (optional)
             </label>
             <textarea
+              id="notes-input"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               className="w-full px-3 py-2 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent resize-none"

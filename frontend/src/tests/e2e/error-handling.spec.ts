@@ -128,7 +128,7 @@ test.describe('Error Handling', () => {
 
   test('should handle timeout scenarios', async ({ page }) => {
     // Mock timeout by never resolving
-    await page.route('**/api/v1/trips**', (route) => {
+    await page.route('**/api/v1/trips**', () => {
       // Don't resolve the route, simulating a timeout
     });
 

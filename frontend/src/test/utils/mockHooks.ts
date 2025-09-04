@@ -1,78 +1,67 @@
 import { vi } from 'vitest'
-import { createMockHookReturns } from './testUtils'
+import { createMockHookReturns } from './mockData'
 
-// Create centralized mock implementations for all hooks
-const mockReturns = createMockHookReturns()
+// Get default mock returns
+const defaultMocks = createMockHookReturns()
 
-// Mock implementations that can be used across tests
-// These need to be created outside of mock calls to avoid hoisting issues
-export const mockUseTrips = vi.fn()
-export const mockUseCreateTrip = vi.fn()
-export const mockUseUpdateTrip = vi.fn()
-export const mockUseDeleteTrip = vi.fn()
-export const mockUseConnectionStatus = vi.fn()
-export const mockUseClientSuggestions = vi.fn()
-export const mockUseSummary = vi.fn()
+// Mock hook implementations that can be overridden in tests
+export const mockUseTrips = vi.fn(() => defaultMocks.useTrips)
+export const mockUseCreateTrip = vi.fn(() => defaultMocks.useCreateTrip)
+export const mockUseUpdateTrip = vi.fn(() => defaultMocks.useUpdateTrip)
+export const mockUseDeleteTrip = vi.fn(() => defaultMocks.useDeleteTrip)
+export const mockUseConnectionStatus = vi.fn(() => defaultMocks.useConnectionStatus)
+export const mockUseClientSuggestions = vi.fn(() => defaultMocks.useClientSuggestions)
+export const mockUseSummary = vi.fn(() => defaultMocks.useSummary)
 
-// Initialize default return values
-mockUseTrips.mockReturnValue(mockReturns.useTrips)
-mockUseCreateTrip.mockReturnValue(mockReturns.useCreateTrip)
-mockUseUpdateTrip.mockReturnValue(mockReturns.useUpdateTrip)
-mockUseDeleteTrip.mockReturnValue(mockReturns.useDeleteTrip)
-mockUseConnectionStatus.mockReturnValue(mockReturns.useConnectionStatus)
-mockUseClientSuggestions.mockReturnValue(mockReturns.useClientSuggestions)
-mockUseSummary.mockReturnValue(mockReturns.useSummary)
-
-// Helper to reset all mocks to their default values
-export const resetAllMocks = () => {
-  const freshMockReturns = createMockHookReturns()
-  mockUseTrips.mockReturnValue(freshMockReturns.useTrips)
-  mockUseCreateTrip.mockReturnValue(freshMockReturns.useCreateTrip)
-  mockUseUpdateTrip.mockReturnValue(freshMockReturns.useUpdateTrip)
-  mockUseDeleteTrip.mockReturnValue(freshMockReturns.useDeleteTrip)
-  mockUseConnectionStatus.mockReturnValue(freshMockReturns.useConnectionStatus)
-  mockUseClientSuggestions.mockReturnValue(freshMockReturns.useClientSuggestions)
-  mockUseSummary.mockReturnValue(freshMockReturns.useSummary)
+// Helper function to reset all mocks to defaults
+export const resetMockHooks = () => {
+  const fresh = createMockHookReturns()
+  mockUseTrips.mockReturnValue(fresh.useTrips)
+  mockUseCreateTrip.mockReturnValue(fresh.useCreateTrip)
+  mockUseUpdateTrip.mockReturnValue(fresh.useUpdateTrip)
+  mockUseDeleteTrip.mockReturnValue(fresh.useDeleteTrip)
+  mockUseConnectionStatus.mockReturnValue(fresh.useConnectionStatus)
+  mockUseClientSuggestions.mockReturnValue(fresh.useClientSuggestions)
+  mockUseSummary.mockReturnValue(fresh.useSummary)
 }
 
-// Helper to set loading state
-export const setLoadingState = () => {
-  mockUseTrips.mockReturnValue({
-    ...mockReturns.useTrips,
-    isLoading: true,
-    data: undefined,
-  })
+// Alias for compatibility with existing tests
+export const resetAllMocks = resetMockHooks
+
+// Helper function to clear all mocks
+export const clearMockHooks = () => {
+  mockUseTrips.mockClear()
+  mockUseCreateTrip.mockClear()
+  mockUseUpdateTrip.mockClear()
+  mockUseDeleteTrip.mockClear()
+  mockUseConnectionStatus.mockClear()
+  mockUseClientSuggestions.mockClear()
+  mockUseSummary.mockClear()
 }
 
-// Helper to set error state
-export const setErrorState = (error: Error) => {
-  mockUseTrips.mockReturnValue({
-    ...mockReturns.useTrips,
-    isLoading: false,
-    isError: true,
-    error,
-    data: undefined,
-  })
-}
+// Setup function to configure all mocks at once
+export const setupMockHooks = () => {
+  vi.doMock('../../hooks/useTrips', () => ({
+    useTrips: mockUseTrips,
+    useCreateTrip: mockUseCreateTrip,
+    useUpdateTrip: mockUseUpdateTrip,
+    useDeleteTrip: mockUseDeleteTrip,
+  }))
 
-// Helper to set empty state
-export const setEmptyState = () => {
-  mockUseTrips.mockReturnValue({
-    ...mockReturns.useTrips,
-    data: {
-      trips: [],
-      total: 0,
-      page: 1,
-      limit: 10,
-      total_pages: 0,
-    },
-  })
-}
+  vi.doMock('../../hooks/useClients', () => ({
+    useClientSuggestions: mockUseClientSuggestions,
+  }))
 
-// Helper to set disconnected state
-export const setDisconnectedState = () => {
-  mockUseConnectionStatus.mockReturnValue({
-    data: { connected: false },
-    isLoading: false,
-  })
+  vi.doMock('../../hooks/useConnectionStatus', () => ({
+    useConnectionStatus: mockUseConnectionStatus,
+  }))
+
+  vi.doMock('../../hooks/useSummary', () => ({
+    useSummary: mockUseSummary,
+  }))
+
+  vi.doMock('../../utils/errorUtils', () => ({
+    getApiErrorMessage: vi.fn(() => 'Test error message'),
+    isAxiosError: vi.fn(() => false),
+  }))
 }

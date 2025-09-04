@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
-import { PlusIcon, UserIcon, CalendarIcon, TruckIcon, DocumentTextIcon, WifiIcon } from '@heroicons/react/24/outline'
+import { useState } from 'react'
+import { PlusIcon, UserIcon, CalendarIcon, TruckIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { useCreateTrip } from '../hooks/useTrips'
-import { useClientSuggestions } from '../hooks/useClients'
-import { useConnectionStatus } from '../hooks/useConnectionStatus'
+import { useClientSuggestions as useClientSuggestionsHook } from '../hooks/useClientSuggestions'
 import { getApiErrorMessage } from '../utils/errorUtils'
+import { validateTripForm } from '../utils/formUtils'
+import { Button, Input, FormField, ClientSuggestions, Textarea, ConnectionStatus } from './ui'
 import type { CreateTripRequest, FormErrors } from '../types'
 
 export default function AddTripForm() {
@@ -14,49 +15,15 @@ export default function AddTripForm() {
     notes: ''
   })
   const [errors, setErrors] = useState<FormErrors>({})
-  const [showSuggestions, setShowSuggestions] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const clientInputRef = useRef<HTMLInputElement>(null)
-  const suggestionsRef = useRef<HTMLDivElement>(null)
 
   const createTripMutation = useCreateTrip()
-  const { data: clientSuggestions } = useClientSuggestions(formData.client_name)
-  const { data: connectionStatus } = useConnectionStatus()
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target as Node) &&
-        !clientInputRef.current?.contains(event.target as Node)
-      ) {
-        setShowSuggestions(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  const clientSuggestions = useClientSuggestionsHook(formData.client_name)
 
   const validateForm = (): boolean => {
-    const newErrors: FormErrors = {}
-
-    if (!formData.client_name.trim()) {
-      newErrors.client_name = 'Client name is required'
-    } else if (formData.client_name.length > 30) {
-      newErrors.client_name = 'Client name must be 30 characters or less'
-    }
-
-    if (!formData.trip_date) {
-      newErrors.trip_date = 'Trip date is required'
-    }
-
-    if (formData.miles <= 0) {
-      newErrors.miles = 'Miles must be greater than 0'
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    const { isValid, errors: validationErrors } = validateTripForm(formData)
+    setErrors(validationErrors)
+    return isValid
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -82,19 +49,45 @@ export default function AddTripForm() {
 
   const handleClientSelect = (clientName: string) => {
     setFormData({ ...formData, client_name: clientName })
-    setShowSuggestions(false)
+    clientSuggestions.handleClientSelect(clientName)
+  }
+
+  const handleClientNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setFormData({ ...formData, client_name: value })
+    if (value.length > 0) {
+      clientSuggestions.showSuggestionsDropdown()
+    } else {
+      clientSuggestions.hideSuggestionsDropdown()
+    }
+    // Clear error when user starts typing
+    if (errors.client_name) {
+      setErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors.client_name
+        return newErrors
+      })
+    }
+  }
+
+  const handleClientNameFocus = () => {
+    if (formData.client_name.length > 0) {
+      clientSuggestions.showSuggestionsDropdown()
+    }
   }
 
   if (isCollapsed) {
     return (
       <div className="bg-ctp-surface0 rounded-lg p-4 shadow-sm">
-        <button
+        <Button
           onClick={() => setIsCollapsed(false)}
-          className="w-full flex items-center justify-center gap-2 py-3 text-ctp-blue font-medium"
+          variant="ghost"
+          icon={PlusIcon}
+          fullWidth
+          className="text-ctp-blue font-medium py-3"
         >
-          <PlusIcon className="h-5 w-5" />
           Add New Trip
-        </button>
+        </Button>
       </div>
     )
   }
@@ -104,14 +97,7 @@ export default function AddTripForm() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-semibold text-ctp-text">Add New Trip</h2>
-          {connectionStatus && (
-            <div className="flex items-center gap-1 text-xs">
-              <WifiIcon className={`h-3 w-3 ${connectionStatus.connected ? 'text-ctp-green' : 'text-ctp-red'}`} />
-              <span className={connectionStatus.connected ? 'text-ctp-green' : 'text-ctp-red'}>
-                {connectionStatus.connected ? 'Connected' : 'Disconnected'}
-              </span>
-            </div>
-          )}
+          <ConnectionStatus />
         </div>
         <button
           onClick={() => setIsCollapsed(true)}
@@ -124,121 +110,110 @@ export default function AddTripForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Client Name */}
-        <div className="relative">
-          <label htmlFor="client_name" className="block text-sm font-medium text-ctp-text mb-2">
-            Client Name
-          </label>
+        <FormField
+          label="Client Name"
+          error={errors.client_name}
+          icon={UserIcon}
+          id="client_name"
+        >
           <div className="relative">
-            <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-ctp-subtext1" />
-            <input
-              ref={clientInputRef}
-              type="text"
+            <Input
+              ref={clientSuggestions.inputRef}
               id="client_name"
               maxLength={30}
               value={formData.client_name}
-              onChange={(e) => {
-                setFormData({ ...formData, client_name: e.target.value })
-                setShowSuggestions(e.target.value.length > 0)
-              }}
-              onFocus={() => setShowSuggestions(formData.client_name.length > 0)}
-              className="w-full pl-10 pr-4 py-3 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
+              onChange={handleClientNameChange}
+              onFocus={handleClientNameFocus}
+              hasIcon
+              error={!!errors.client_name}
               placeholder="Enter client name"
             />
+            
+            {/* Client Suggestions */}
+            <ClientSuggestions
+              ref={clientSuggestions.suggestionsRef}
+              clients={clientSuggestions.suggestions?.data?.clients || []}
+              show={clientSuggestions.showSuggestions}
+              onSelect={handleClientSelect}
+            />
           </div>
-          
-          {/* Client Suggestions */}
-          {showSuggestions && clientSuggestions?.clients && clientSuggestions.clients.length > 0 && (
-            <div
-              ref={suggestionsRef}
-              className="absolute z-10 w-full mt-1 bg-ctp-surface0 border border-ctp-surface1 rounded-lg shadow-lg max-h-48 overflow-y-auto"
-            >
-              {clientSuggestions.clients.map((client) => (
-                <button
-                  key={client.id}
-                  type="button"
-                  onClick={() => handleClientSelect(client.name)}
-                  className="w-full text-left px-3 py-2 hover:bg-ctp-surface1 text-ctp-text first:rounded-t-lg last:rounded-b-lg"
-                >
-                  {client.name}
-                </button>
-              ))}
-            </div>
-          )}
-          
-          {errors.client_name && (
-            <p className="text-ctp-red text-sm mt-1">{errors.client_name}</p>
-          )}
-        </div>
+        </FormField>
 
         {/* Trip Date */}
-        <div>
-          <label htmlFor="trip_date" className="block text-sm font-medium text-ctp-text mb-2">
-            Trip Date <span className="text-ctp-red">*</span>
-          </label>
-          <div className="relative">
-            <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-ctp-subtext1" />
-            <input
-              type="date"
-              id="trip_date"
-              value={formData.trip_date}
-              onChange={(e) => setFormData({ ...formData, trip_date: e.target.value })}
-              className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent ${
-                errors.trip_date ? 'border-ctp-red' : 'border-ctp-surface1'
-              }`}
-              placeholder="Select trip date"
-            />
-          </div>
-          {errors.trip_date && (
-            <p className="text-ctp-red text-sm mt-1">{errors.trip_date}</p>
-          )}
-          {!formData.trip_date && !errors.trip_date && (
-            <p className="text-ctp-subtext1 text-xs mt-1">
-              💡 Select the date when your trip occurred
-            </p>
-          )}
-        </div>
+        <FormField
+          label="Trip Date"
+          required
+          error={errors.trip_date}
+          helperText={!formData.trip_date && !errors.trip_date ? "💡 Select the date when your trip occurred" : undefined}
+          icon={CalendarIcon}
+          id="trip_date"
+        >
+          <Input
+            type="date"
+            id="trip_date"
+            value={formData.trip_date}
+            onChange={(e) => {
+              setFormData({ ...formData, trip_date: e.target.value })
+              if (errors.trip_date) {
+                setErrors(prev => {
+                  const newErrors = { ...prev }
+                  delete newErrors.trip_date
+                  return newErrors
+                })
+              }
+            }}
+            hasIcon
+            error={!!errors.trip_date}
+            placeholder="Select trip date"
+          />
+        </FormField>
 
         {/* Miles */}
-        <div>
-          <label htmlFor="miles" className="block text-sm font-medium text-ctp-text mb-2">
-            Miles Driven
-          </label>
-          <div className="relative">
-            <TruckIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-ctp-subtext1" />
-            <input
-              type="number"
-              id="miles"
-              step="0.1"
-              min="0"
-              inputMode="decimal"
-              value={formData.miles || ''}
-              onChange={(e) => setFormData({ ...formData, miles: parseFloat(e.target.value) || 0 })}
-              className="w-full pl-10 pr-4 py-3 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
-              placeholder="0.0"
-            />
-          </div>
-          {errors.miles && (
-            <p className="text-ctp-red text-sm mt-1">{errors.miles}</p>
-          )}
-        </div>
+        <FormField
+          label="Miles Driven"
+          error={errors.miles}
+          icon={TruckIcon}
+          id="miles"
+        >
+          <Input
+            type="number"
+            id="miles"
+            step="0.1"
+            min="0"
+            inputMode="decimal"
+            value={formData.miles || ''}
+            onChange={(e) => {
+              setFormData({ ...formData, miles: parseFloat(e.target.value) || 0 })
+              if (errors.miles) {
+                setErrors(prev => {
+                  const newErrors = { ...prev }
+                  delete newErrors.miles
+                  return newErrors
+                })
+              }
+            }}
+            hasIcon
+            error={!!errors.miles}
+            placeholder="0.0"
+          />
+        </FormField>
 
         {/* Notes */}
-        <div>
-          <label htmlFor="notes" className="block text-sm font-medium text-ctp-text mb-2">
-            Notes (Optional)
-          </label>
-          <div className="relative">
-            <DocumentTextIcon className="absolute left-3 top-3 h-5 w-5 text-ctp-subtext1" />
-            <textarea
-              id="notes"
-              rows={3}
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full pl-10 pr-4 py-3 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent resize-none"
-              placeholder="Trip details, purpose, etc."
-            />
-          </div>
-        </div>
+        <FormField
+          label="Notes (Optional)"
+          icon={DocumentTextIcon}
+          id="notes"
+        >
+          <Textarea
+            id="notes"
+            rows={3}
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            hasIcon
+            noResize
+            placeholder="Trip details, purpose, etc."
+          />
+        </FormField>
 
         {/* Error Display */}
         {createTripMutation.isError && (
@@ -249,23 +224,14 @@ export default function AddTripForm() {
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
-          disabled={createTripMutation.isPending}
-          className="w-full bg-ctp-blue hover:bg-ctp-blue/90 disabled:bg-ctp-blue/50 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+          loading={createTripMutation.isPending}
+          icon={!createTripMutation.isPending ? PlusIcon : undefined}
+          fullWidth
         >
-          {createTripMutation.isPending ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-              Adding Trip...
-            </>
-          ) : (
-            <>
-              <PlusIcon className="h-5 w-5" />
-              Add Trip
-            </>
-          )}
-        </button>
+          {createTripMutation.isPending ? 'Adding Trip...' : 'Add Trip'}
+        </Button>
       </form>
     </div>
   )

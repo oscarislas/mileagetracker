@@ -57,7 +57,6 @@ test.describe('User Interactions', () => {
     await page.route('**/api/v1/trips**', (route) => {
       const url = new URL(route.request().url());
       const clientFilter = url.searchParams.get('client');
-      const dateRange = url.searchParams.get('date_range');
       
       let filteredTrips = [
         {
@@ -228,8 +227,6 @@ test.describe('User Interactions', () => {
     await page.setViewportSize({ width: 375, height: 667 });
     
     // Test swipe/scroll interactions
-    const scrollContainer = page.locator('body');
-    
     // Simulate touch scroll down
     await page.mouse.move(200, 300);
     await page.mouse.down();

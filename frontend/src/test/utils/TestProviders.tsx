@@ -1,7 +1,8 @@
+import React from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Create a test query client with no retries for faster tests
-export const createTestQueryClient = () =>
+const createTestQueryClient = () =>
   new QueryClient({
     defaultOptions: {
       queries: {
@@ -29,3 +30,6 @@ export function AllTheProviders({ children }: { children: React.ReactNode }) {
     </QueryClientProvider>
   )
 }
+
+// Also export the query client creator for direct use in tests
+export { createTestQueryClient }

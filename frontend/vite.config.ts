@@ -21,6 +21,14 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    // Exclude E2E tests from unit test runs
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/e2e/**',
+      '**/*.spec.ts', // Playwright test files
+      '**/*.e2e.ts',
+    ],
     coverage: {
       reportsDirectory: '../coverage/frontend',
       reporter: ['text', 'json', 'html'],
@@ -29,6 +37,8 @@ export default defineConfig({
         'src/test/',
         '**/*.config.*',
         'dist/',
+        '**/e2e/**',
+        '**/*.spec.ts',
       ],
     },
   },

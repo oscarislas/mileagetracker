@@ -86,20 +86,23 @@ export function formatTripDateRelative(dateString: string): string {
       return 'Invalid Date';
     }
     
-    const today = new Date();
-    const yesterday = new Date(today);
+    // Get today's date string for comparison
+    const todayString = getTodayDateString();
+    
+    // Get yesterday's date string
+    const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toISOString().split('T')[0];
     
-    // Compare dates by resetting time to avoid timezone issues
-    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+    // Extract just the date part from the input for comparison
+    const inputDateString = dateString.includes('T') ? dateString.split('T')[0] : dateString;
     
-    if (dateOnly.getTime() === todayOnly.getTime()) {
+    if (inputDateString === todayString) {
       return 'Today';
-    } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
+    } else if (inputDateString === yesterdayString) {
       return 'Yesterday';
     } else {
+      const today = new Date();
       return date.toLocaleDateString('en-US', { 
         month: 'short', 
         day: 'numeric',

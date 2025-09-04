@@ -152,3 +152,8 @@ tmp/
 
 # Claude Code configuration
 CLAUDE.md
+
+# Playwright test results
+test-results/
+playwright-report/
+.last-run.json

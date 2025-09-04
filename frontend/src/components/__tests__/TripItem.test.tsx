@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { vi, describe, it, expect } from 'vitest'
-import EnhancedTripItem from '../EnhancedTripItem'
+import TripItem from '../TripItem'
 import type { Trip } from '../../types'
 import { getTodayDateString } from '../../utils/dateUtils'
 
@@ -45,9 +45,9 @@ const mockTrip: Trip = {
   updated_at: '2024-01-15T10:00:00Z'
 }
 
-describe('EnhancedTripItem', () => {
+describe('TripItem', () => {
   it('renders trip information correctly', () => {
-    render(<EnhancedTripItem trip={mockTrip} />)
+    render(<TripItem trip={mockTrip} />)
     
     expect(screen.getByText('Test Client')).toBeInTheDocument()
     expect(screen.getByText('25.5 miles')).toBeInTheDocument()
@@ -55,7 +55,7 @@ describe('EnhancedTripItem', () => {
   })
 
   it('shows view details button when showActions is true', () => {
-    render(<EnhancedTripItem trip={mockTrip} showActions={true} />)
+    render(<TripItem trip={mockTrip} showActions={true} />)
     
     const viewButton = screen.getByRole('button', { name: 'View details' })
     
@@ -64,13 +64,13 @@ describe('EnhancedTripItem', () => {
   })
 
   it('hides view details button when showActions is false', () => {
-    render(<EnhancedTripItem trip={mockTrip} showActions={false} />)
+    render(<TripItem trip={mockTrip} showActions={false} />)
     
     expect(screen.queryByRole('button', { name: 'View details' })).not.toBeInTheDocument()
   })
 
   it('opens trip detail modal when view details button is clicked', () => {
-    render(<EnhancedTripItem trip={mockTrip} showActions={true} />)
+    render(<TripItem trip={mockTrip} showActions={true} />)
     
     // Click view details button
     const viewButton = screen.getByRole('button', { name: 'View details' })
@@ -86,14 +86,14 @@ describe('EnhancedTripItem', () => {
   // This test is removed as delete is no longer directly accessible from the trip item
 
   it('calculates estimated deduction correctly', () => {
-    render(<EnhancedTripItem trip={mockTrip} />)
+    render(<TripItem trip={mockTrip} />)
     
     // 25.5 * 0.67 = 17.09
     expect(screen.getByText('17.09')).toBeInTheDocument()
   })
 
   it('view details button has proper mobile touch target and accessibility attributes', () => {
-    render(<EnhancedTripItem trip={mockTrip} showActions={true} />)
+    render(<TripItem trip={mockTrip} showActions={true} />)
     
     const viewButton = screen.getByRole('button', { name: 'View details' })
     
@@ -107,7 +107,7 @@ describe('EnhancedTripItem', () => {
   })
 
   it('view details button renders with EyeIcon', () => {
-    render(<EnhancedTripItem trip={mockTrip} showActions={true} />)
+    render(<TripItem trip={mockTrip} showActions={true} />)
     
     const viewButton = screen.getByRole('button', { name: 'View details' })
     expect(viewButton).toBeInTheDocument()
@@ -121,7 +121,7 @@ describe('EnhancedTripItem', () => {
   describe('date display', () => {
     it('displays relative date for past dates correctly', () => {
       const pastTrip = { ...mockTrip, trip_date: '2024-01-15' }
-      render(<EnhancedTripItem trip={pastTrip} />)
+      render(<TripItem trip={pastTrip} />)
       
       // Should show formatted date since it's in the past
       expect(screen.getByText('Jan 15, 2024')).toBeInTheDocument()
@@ -133,7 +133,7 @@ describe('EnhancedTripItem', () => {
         ...mockTrip, 
         trip_date: getTodayDateString() 
       }
-      render(<EnhancedTripItem trip={todaysTrip} />)
+      render(<TripItem trip={todaysTrip} />)
       
       // The date should display as either "Today" or a formatted date like "Sep 4"
       // Due to timezone differences in test environments, we check for either format
@@ -153,7 +153,7 @@ describe('EnhancedTripItem', () => {
         ...mockTrip, 
         trip_date: yesterday.toISOString().split('T')[0]
       }
-      render(<EnhancedTripItem trip={yesterdayTrip} />)
+      render(<TripItem trip={yesterdayTrip} />)
       
       // Due to timezone complexity, just verify the component renders properly
       // The date logic is tested elsewhere and the main goal is UI rendering
@@ -164,7 +164,7 @@ describe('EnhancedTripItem', () => {
     it('displays formatted date for dates from earlier this year', () => {
       const earlyThisYear = '2025-01-15'
       const earlyTrip = { ...mockTrip, trip_date: earlyThisYear }
-      render(<EnhancedTripItem trip={earlyTrip} />)
+      render(<TripItem trip={earlyTrip} />)
       
       // Should show month and day without year for current year dates
       expect(screen.getByText('Jan 15')).toBeInTheDocument()
@@ -172,7 +172,7 @@ describe('EnhancedTripItem', () => {
 
     it('displays formatted date with year for different year dates', () => {
       const differentYearTrip = { ...mockTrip, trip_date: '2023-06-20' }
-      render(<EnhancedTripItem trip={differentYearTrip} />)
+      render(<TripItem trip={differentYearTrip} />)
       
       // Should show month, day and year for different year dates
       expect(screen.getByText('Jun 20, 2023')).toBeInTheDocument()
@@ -180,7 +180,7 @@ describe('EnhancedTripItem', () => {
 
     it('handles ISO timestamp format dates correctly', () => {
       const isoDateTrip = { ...mockTrip, trip_date: '2025-01-15T10:00:00Z' }
-      render(<EnhancedTripItem trip={isoDateTrip} />)
+      render(<TripItem trip={isoDateTrip} />)
       
       // Should extract date part and format correctly
       expect(screen.getByText('Jan 15')).toBeInTheDocument()

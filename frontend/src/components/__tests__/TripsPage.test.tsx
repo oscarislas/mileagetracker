@@ -1,11 +1,12 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, UseQueryResult, UseMutationResult } from '@tanstack/react-query'
 import { vi } from 'vitest'
-import EnhancedTripsPage from '../../pages/EnhancedTripsPage'
+import TripsPage from '../../pages/TripsPage'
 import * as tripsHook from '../../hooks/useTrips'
 import * as summaryHook from '../../hooks/useSummary'
 import * as clientsHook from '../../hooks/useClients'
+import type { TripsResponse, SummaryResponse, ClientSuggestionsResponse, CreateTripRequest, MessageResponse } from '../../types'
 
 // Mock the hooks
 vi.mock('../../hooks/useTrips')
@@ -70,7 +71,7 @@ const renderWithQueryClient = (component: React.ReactElement) => {
   )
 }
 
-describe('EnhancedTripsPage', () => {
+describe('TripsPage', () => {
   beforeEach(() => {
     mockUseTrips.mockReturnValue({
       data: mockTripsData,
@@ -98,7 +99,7 @@ describe('EnhancedTripsPage', () => {
       isPlaceholderData: false,
       isPreviousData: false,
       isInitialLoading: false
-    } as any)
+    } as UseQueryResult<TripsResponse>)
     
     mockUseSummary.mockReturnValue({
       data: mockSummaryData,
@@ -126,7 +127,7 @@ describe('EnhancedTripsPage', () => {
       isPlaceholderData: false,
       isPreviousData: false,
       isInitialLoading: false
-    } as any)
+    } as UseQueryResult<SummaryResponse>)
     
     mockUseAllClients.mockReturnValue({
       data: mockClientsData,
@@ -154,7 +155,7 @@ describe('EnhancedTripsPage', () => {
       isPlaceholderData: false,
       isPreviousData: false,
       isInitialLoading: false
-    } as any)
+    } as UseQueryResult<ClientSuggestionsResponse>)
     
     mockUseClientSuggestions.mockReturnValue({
       data: { clients: [] },
@@ -182,7 +183,7 @@ describe('EnhancedTripsPage', () => {
       isPlaceholderData: false,
       isPreviousData: false,
       isInitialLoading: false
-    } as any)
+    } as UseQueryResult<ClientSuggestionsResponse>)
     
     mockUseCreateTrip.mockReturnValue({
       mutate: vi.fn(),
@@ -200,7 +201,7 @@ describe('EnhancedTripsPage', () => {
       submittedAt: 0,
       variables: undefined,
       context: undefined
-    } as any)
+    } as UseMutationResult<MessageResponse, Error, CreateTripRequest>)
   })
 
   afterEach(() => {
@@ -208,7 +209,7 @@ describe('EnhancedTripsPage', () => {
   })
 
   test('renders filter panel when filters button is clicked', () => {
-    renderWithQueryClient(<EnhancedTripsPage />)
+    renderWithQueryClient(<TripsPage />)
     
     const filtersButton = screen.getByRole('button', { name: /filters/i })
     fireEvent.click(filtersButton)
@@ -220,7 +221,7 @@ describe('EnhancedTripsPage', () => {
   })
 
   test('populates client dropdown with fetched clients', () => {
-    renderWithQueryClient(<EnhancedTripsPage />)
+    renderWithQueryClient(<TripsPage />)
     
     const filtersButton = screen.getByRole('button', { name: /filters/i })
     fireEvent.click(filtersButton)
@@ -237,7 +238,7 @@ describe('EnhancedTripsPage', () => {
   })
 
   test('applies filters when Apply Filters button is clicked', async () => {
-    renderWithQueryClient(<EnhancedTripsPage />)
+    renderWithQueryClient(<TripsPage />)
     
     // Open filters
     const filtersButton = screen.getByRole('button', { name: /filters/i })
@@ -269,7 +270,7 @@ describe('EnhancedTripsPage', () => {
   })
 
   test('clears all filters when Clear All button is clicked', async () => {
-    renderWithQueryClient(<EnhancedTripsPage />)
+    renderWithQueryClient(<TripsPage />)
     
     // Open filters and set some values
     const filtersButton = screen.getByRole('button', { name: /filters/i })
@@ -288,7 +289,7 @@ describe('EnhancedTripsPage', () => {
   })
 
   test('updates search query in real-time', async () => {
-    renderWithQueryClient(<EnhancedTripsPage />)
+    renderWithQueryClient(<TripsPage />)
     
     const searchInput = screen.getByPlaceholderText(/search trips, clients/i)
     fireEvent.change(searchInput, { target: { value: 'test search' } })
@@ -302,7 +303,7 @@ describe('EnhancedTripsPage', () => {
   })
 
   test('displays filtered trips heading when filters are applied', async () => {
-    renderWithQueryClient(<EnhancedTripsPage />)
+    renderWithQueryClient(<TripsPage />)
     
     // Set a search query to trigger filters
     const searchInput = screen.getByPlaceholderText(/search trips, clients/i)
@@ -362,7 +363,7 @@ describe('EnhancedTripsPage', () => {
       isPlaceholderData: false,
       isPreviousData: false,
       isInitialLoading: false
-    } as any)
+    } as UseQueryResult<TripsResponse>)
     
     mockUseSummary.mockReturnValue({
       data: mockSummaryWithoutTotal,
@@ -390,9 +391,9 @@ describe('EnhancedTripsPage', () => {
       isPlaceholderData: false,
       isPreviousData: false,
       isInitialLoading: false
-    } as any)
+    } as UseQueryResult<SummaryResponse>)
     
-    renderWithQueryClient(<EnhancedTripsPage />)
+    renderWithQueryClient(<TripsPage />)
     
     // Verify that the total trips count comes from tripsData.total, not summaryData.total_trips
     expect(screen.getByText('11')).toBeInTheDocument()
@@ -426,7 +427,7 @@ describe('EnhancedTripsPage', () => {
       isPlaceholderData: false,
       isPreviousData: false,
       isInitialLoading: false
-    } as any)
+    } as UseQueryResult<TripsResponse>)
     
     mockUseSummary.mockReturnValue({
       data: mockSummaryData,
@@ -454,9 +455,9 @@ describe('EnhancedTripsPage', () => {
       isPlaceholderData: false,
       isPreviousData: false,
       isInitialLoading: false
-    } as any)
+    } as UseQueryResult<SummaryResponse>)
     
-    renderWithQueryClient(<EnhancedTripsPage />)
+    renderWithQueryClient(<TripsPage />)
     
     // Should display 0 when trips data is null/undefined
     expect(screen.getByText('0')).toBeInTheDocument()
@@ -464,7 +465,7 @@ describe('EnhancedTripsPage', () => {
   })
   
   test('calls useTrips hook with minimal parameters for total count', () => {
-    renderWithQueryClient(<EnhancedTripsPage />)
+    renderWithQueryClient(<TripsPage />)
     
     // Verify that useTrips is called with (1, 1) to get just the total count efficiently
     // This should be the first call (for the stats overview)

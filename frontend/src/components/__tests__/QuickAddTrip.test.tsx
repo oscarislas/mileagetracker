@@ -3,19 +3,28 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import QuickAddTrip from '../QuickAddTrip'
 import { renderWithProviders } from '../../test/utils/testUtils'
-import {
-  mockUseCreateTrip,
-  mockUseClientSuggestions,
-  resetAllMocks
-} from '../../test/utils/mockHooks'
+
+// Create mock functions that can be controlled in tests
+const mockCreateTripMutate = vi.fn()
+const mockUseCreateTrip = vi.fn(() => ({
+  mutate: mockCreateTripMutate,
+  isPending: false,
+  isError: false,
+  error: null,
+}))
+
+const mockUseClientSuggestions = vi.fn(() => ({
+  data: { clients: [] },
+  isLoading: false,
+}))
 
 // Mock the hooks
 vi.mock('../../hooks/useTrips', () => ({
-  useCreateTrip: mockUseCreateTrip,
+  useCreateTrip: () => mockUseCreateTrip(),
 }))
 
 vi.mock('../../hooks/useClients', () => ({
-  useClientSuggestions: mockUseClientSuggestions,
+  useClientSuggestions: () => mockUseClientSuggestions(),
 }))
 
 vi.mock('../../utils/errorUtils', () => ({
@@ -25,52 +34,91 @@ vi.mock('../../utils/errorUtils', () => ({
 describe('QuickAddTrip', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    resetAllMocks()
+    // Reset to default values
+    mockUseCreateTrip.mockReturnValue({
+      mutate: mockCreateTripMutate,
+      isPending: false,
+      isError: false,
+      error: null,
+    })
+    mockUseClientSuggestions.mockReturnValue({
+      data: { clients: [] },
+      isLoading: false,
+    })
   })
 
-  it('renders the quick add form with all fields', () => {
+  it('renders collapsed initially with expand button', () => {
     renderWithProviders(<QuickAddTrip />)
     
-    expect(screen.getByLabelText(/client/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/miles/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /add trip/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /quick add trip/i })).toBeInTheDocument()
+    // Form fields should not be visible when collapsed
+    expect(screen.queryByLabelText(/who did you visit/i)).not.toBeInTheDocument()
   })
 
-  it('uses today as default date', () => {
-    renderWithProviders(<QuickAddTrip />)
-    
-    // The component should internally use today's date
-    expect(screen.getByLabelText(/client/i)).toBeInTheDocument()
-  })
-
-  it('validates required fields', async () => {
+  it('expands to show client input when clicked', async () => {
     const user = userEvent.setup()
     renderWithProviders(<QuickAddTrip />)
     
-    const submitButton = screen.getByRole('button', { name: /add trip/i })
-    await user.click(submitButton)
+    const expandButton = screen.getByRole('button', { name: /quick add trip/i })
+    await user.click(expandButton)
     
-    await waitFor(() => {
-      expect(screen.getByText(/client.*required/i)).toBeInTheDocument()
-    })
+    expect(screen.getByLabelText(/who did you visit/i)).toBeInTheDocument()
+  })
+
+  it('shows next button enabled when client name is entered', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<QuickAddTrip />)
+    
+    // Click to expand
+    const expandButton = screen.getByRole('button', { name: /quick add trip/i })
+    await user.click(expandButton)
+    
+    const clientInput = screen.getByLabelText(/who did you visit/i)
+    const nextButton = screen.getByRole('button', { name: /next/i })
+    
+    expect(nextButton).toBeDisabled()
+    
+    await user.type(clientInput, 'Test Client')
+    expect(nextButton).not.toBeDisabled()
+  })
+
+  it('proceeds to details step when next is clicked', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<QuickAddTrip />)
+    
+    // Step 1: Expand
+    const expandButton = screen.getByRole('button', { name: /quick add trip/i })
+    await user.click(expandButton)
+    
+    // Step 2: Enter client and click next
+    const clientInput = screen.getByLabelText(/who did you visit/i)
+    await user.type(clientInput, 'Test Client')
+    
+    const nextButton = screen.getByRole('button', { name: /next/i })
+    await user.click(nextButton)
+    
+    // Step 3: Check details step is shown
+    expect(screen.getByLabelText(/miles/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/date/i)).toBeInTheDocument()
+    expect(screen.getByText('Test Client')).toBeInTheDocument()
   })
 
   it('validates miles input', async () => {
     const user = userEvent.setup()
     renderWithProviders(<QuickAddTrip />)
     
-    const clientInput = screen.getByLabelText(/client/i)
+    // Navigate to details step
+    await user.click(screen.getByRole('button', { name: /quick add trip/i }))
+    await user.type(screen.getByLabelText(/who did you visit/i), 'Test Client')
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    
+    const addTripButton = screen.getByRole('button', { name: /add trip/i })
+    expect(addTripButton).toBeDisabled()
+    
     const milesInput = screen.getByLabelText(/miles/i)
-    const submitButton = screen.getByRole('button', { name: /add trip/i })
+    await user.type(milesInput, '10')
     
-    await user.type(clientInput, 'Test Client')
-    await user.clear(milesInput)
-    await user.type(milesInput, '0')
-    await user.click(submitButton)
-    
-    await waitFor(() => {
-      expect(screen.getByText(/miles.*greater than 0/i)).toBeInTheDocument()
-    })
+    expect(addTripButton).not.toBeDisabled()
   })
 
   it('submits form with valid data', async () => {
@@ -85,14 +133,16 @@ describe('QuickAddTrip', () => {
     const user = userEvent.setup()
     renderWithProviders(<QuickAddTrip />)
     
-    const clientInput = screen.getByLabelText(/client/i)
-    const milesInput = screen.getByLabelText(/miles/i)
-    const submitButton = screen.getByRole('button', { name: /add trip/i })
+    // Navigate through the flow
+    await user.click(screen.getByRole('button', { name: /quick add trip/i }))
+    await user.type(screen.getByLabelText(/who did you visit/i), 'Test Client')
+    await user.click(screen.getByRole('button', { name: /next/i }))
     
-    await user.type(clientInput, 'Test Client')
-    await user.clear(milesInput)
+    const milesInput = screen.getByLabelText(/miles/i)
     await user.type(milesInput, '100')
-    await user.click(submitButton)
+    
+    const addTripButton = screen.getByRole('button', { name: /add trip/i })
+    await user.click(addTripButton)
     
     await waitFor(() => {
       expect(mockMutate).toHaveBeenCalledWith(
@@ -100,12 +150,16 @@ describe('QuickAddTrip', () => {
           client_name: 'Test Client',
           miles: 100,
           trip_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        }),
+        expect.objectContaining({
+          onSuccess: expect.any(Function)
         })
       )
     })
   })
 
-  it('shows loading state during submission', () => {
+  it('shows loading state during submission', async () => {
+    const user = userEvent.setup()
     mockUseCreateTrip.mockReturnValue({
       mutate: vi.fn(),
       isPending: true,
@@ -115,21 +169,14 @@ describe('QuickAddTrip', () => {
     
     renderWithProviders(<QuickAddTrip />)
     
-    expect(screen.getByRole('button', { name: /adding/i })).toBeDisabled()
-  })
-
-  it('displays error message when submission fails', () => {
-    const mockError = new Error('Network error')
-    mockUseCreateTrip.mockReturnValue({
-      mutate: vi.fn(),
-      isPending: false,
-      isError: true,
-      error: mockError,
-    })
+    // Navigate to details step
+    await user.click(screen.getByRole('button', { name: /quick add trip/i }))
+    await user.type(screen.getByLabelText(/who did you visit/i), 'Test Client')
+    await user.click(screen.getByRole('button', { name: /next/i }))
     
-    renderWithProviders(<QuickAddTrip />)
-    
-    expect(screen.getByText('Test error message')).toBeInTheDocument()
+    const addTripButton = screen.getByRole('button', { name: /add trip/i })
+    expect(addTripButton).toBeDisabled()
+    expect(addTripButton.querySelector('.animate-spin')).toBeInTheDocument()
   })
 
   it('resets form after successful submission', async () => {
@@ -147,14 +194,12 @@ describe('QuickAddTrip', () => {
     const user = userEvent.setup()
     renderWithProviders(<QuickAddTrip />)
     
-    const clientInput = screen.getByLabelText(/client/i) as HTMLInputElement
-    const milesInput = screen.getByLabelText(/miles/i) as HTMLInputElement
-    const submitButton = screen.getByRole('button', { name: /add trip/i })
-    
-    await user.type(clientInput, 'Test Client')
-    await user.clear(milesInput)
-    await user.type(milesInput, '100')
-    await user.click(submitButton)
+    // Navigate through the flow
+    await user.click(screen.getByRole('button', { name: /quick add trip/i }))
+    await user.type(screen.getByLabelText(/who did you visit/i), 'Test Client')
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    await user.type(screen.getByLabelText(/miles/i), '100')
+    await user.click(screen.getByRole('button', { name: /add trip/i }))
     
     // Simulate successful submission
     if (onSuccessCallback) {
@@ -162,27 +207,39 @@ describe('QuickAddTrip', () => {
     }
     
     await waitFor(() => {
-      expect(clientInput.value).toBe('')
-      expect(milesInput.value).toBe('')
+      expect(screen.getByText(/trip added!/i)).toBeInTheDocument()
+      expect(screen.getByText(/100 miles to test client/i)).toBeInTheDocument()
     })
+    
+    // Should reset to collapsed after timeout
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /quick add trip/i })).toBeInTheDocument()
+    }, { timeout: 3000 })
   })
 
   it('provides client suggestions when typing', async () => {
     mockUseClientSuggestions.mockReturnValue({
-      data: { clients: ['Acme Corp', 'Beta Inc', 'Test Client'] },
+      data: { 
+        clients: [
+          { id: '1', name: 'Acme Corp' },
+          { id: '2', name: 'Beta Inc' },
+          { id: '3', name: 'Test Client' }
+        ]
+      },
       isLoading: false,
     })
     
     const user = userEvent.setup()
     renderWithProviders(<QuickAddTrip />)
     
-    const clientInput = screen.getByLabelText(/client/i)
+    await user.click(screen.getByRole('button', { name: /quick add trip/i }))
+    const clientInput = screen.getByLabelText(/who did you visit/i)
     await user.type(clientInput, 'Test')
     
-    // If the component implements autocomplete/suggestions
-    // This test would verify the suggestions appear
     await waitFor(() => {
-      expect(clientInput).toHaveValue('Test')
+      expect(screen.getByText('Acme Corp')).toBeInTheDocument()
+      expect(screen.getByText('Beta Inc')).toBeInTheDocument()
+      expect(screen.getByText('Test Client')).toBeInTheDocument()
     })
   })
 
@@ -190,25 +247,53 @@ describe('QuickAddTrip', () => {
     const user = userEvent.setup()
     renderWithProviders(<QuickAddTrip />)
     
+    // Navigate to details step
+    await user.click(screen.getByRole('button', { name: /quick add trip/i }))
+    await user.type(screen.getByLabelText(/who did you visit/i), 'Test Client')
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    
     const milesInput = screen.getByLabelText(/miles/i)
-    await user.clear(milesInput)
     await user.type(milesInput, '125.5')
     
     expect(milesInput).toHaveValue(125.5)
   })
 
-  it('has accessible labels and form structure', () => {
+  it('allows navigation back to client step', async () => {
+    const user = userEvent.setup()
     renderWithProviders(<QuickAddTrip />)
     
-    expect(screen.getByLabelText(/client/i)).toBeInTheDocument()
+    // Navigate to details step
+    await user.click(screen.getByRole('button', { name: /quick add trip/i }))
+    await user.type(screen.getByLabelText(/who did you visit/i), 'Test Client')
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    
+    // Click back
+    const backButton = screen.getByRole('button', { name: /back/i })
+    await user.click(backButton)
+    
+    // Should be back on client step
+    expect(screen.getByLabelText(/who did you visit/i)).toBeInTheDocument()
+  })
+
+  it('has accessible labels and form structure', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<QuickAddTrip />)
+    
+    // Navigate to details step to see all form elements
+    await user.click(screen.getByRole('button', { name: /quick add trip/i }))
+    await user.type(screen.getByLabelText(/who did you visit/i), 'Test Client')
+    await user.click(screen.getByRole('button', { name: /next/i }))
+    
     expect(screen.getByLabelText(/miles/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/date/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/notes/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /add trip/i })).toBeInTheDocument()
     
-    // Check that form elements are properly associated
-    const clientInput = screen.getByLabelText(/client/i)
+    // Check that form elements have proper types
     const milesInput = screen.getByLabelText(/miles/i)
+    const dateInput = screen.getByLabelText(/date/i)
     
-    expect(clientInput).toHaveAttribute('type', 'text')
     expect(milesInput).toHaveAttribute('type', 'number')
+    expect(dateInput).toHaveAttribute('type', 'date')
   })
 })

@@ -1,206 +1,189 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { screen } from '@testing-library/react'
+import { TruckIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
 import StatsCard from '../StatsCard'
 import { renderWithProviders } from '../../test/utils/testUtils'
-import { mockUseSummary, resetAllMocks } from '../../test/utils/mockHooks'
-
-// Mock the hooks
-vi.mock('../../hooks/useSummary', () => ({
-  useSummary: mockUseSummary,
-}))
-
-// Mock LoadingSkeletons
-vi.mock('../LoadingSkeletons', () => ({
-  StatsCardSkeleton: () => <div data-testid="stats-card-skeleton">Loading stats...</div>,
-}))
 
 describe('StatsCard', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    resetAllMocks()
-  })
+  const defaultProps = {
+    title: 'Total Miles',
+    value: '1,245.3',
+    subtitle: 'This month',
+    icon: TruckIcon,
+    color: 'blue' as const,
+  }
 
-  it('renders stats data when available', () => {
-    renderWithProviders(<StatsCard />)
-    
-    expect(screen.getByText('Total Trips')).toBeInTheDocument()
-    expect(screen.getByText('2')).toBeInTheDocument()
+  it('renders basic card information', () => {
+    renderWithProviders(<StatsCard {...defaultProps} />)
     
     expect(screen.getByText('Total Miles')).toBeInTheDocument()
-    expect(screen.getByText('200.5')).toBeInTheDocument()
-    
-    expect(screen.getByText('Total Clients')).toBeInTheDocument()
-    expect(screen.getByText('2')).toBeInTheDocument()
+    expect(screen.getByText('1,245.3')).toBeInTheDocument()
+    expect(screen.getByText('This month')).toBeInTheDocument()
   })
 
-  it('displays loading state', () => {
-    mockUseSummary.mockReturnValue({
-      data: undefined,
-      isLoading: true,
-      isError: false,
-    })
+  it('renders without subtitle', () => {
+    const { subtitle, ...propsWithoutSubtitle } = defaultProps
+    void subtitle // Suppress unused variable warning
+    renderWithProviders(<StatsCard {...propsWithoutSubtitle} />)
     
-    renderWithProviders(<StatsCard />)
-    
-    expect(screen.getByTestId('stats-card-skeleton')).toBeInTheDocument()
-    expect(screen.getByText('Loading stats...')).toBeInTheDocument()
+    expect(screen.getByText('Total Miles')).toBeInTheDocument()
+    expect(screen.getByText('1,245.3')).toBeInTheDocument()
+    expect(screen.queryByText('This month')).not.toBeInTheDocument()
   })
 
-  it('displays error state gracefully', () => {
-    mockUseSummary.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isError: true,
-    })
+  it('renders with trend information', () => {
+    const propsWithTrend = {
+      ...defaultProps,
+      trend: { value: 12.5, label: 'vs last month' },
+    }
     
-    renderWithProviders(<StatsCard />)
+    renderWithProviders(<StatsCard {...propsWithTrend} />)
     
-    // Should show empty state or error message
-    expect(screen.getByText(/unable to load stats/i)).toBeInTheDocument()
+    expect(screen.getByText('12.5% vs last month')).toBeInTheDocument()
+    expect(screen.getByText('↗')).toBeInTheDocument() // Up arrow for positive trend
   })
 
-  it('displays zero values correctly', () => {
-    mockUseSummary.mockReturnValue({
-      data: {
-        total_trips: 0,
-        total_miles: 0,
-        total_clients: 0,
-        this_month: { trips: 0, miles: 0 },
-        this_year: { trips: 0, miles: 0 },
-      },
-      isLoading: false,
-      isError: false,
-    })
+  it('renders negative trend correctly', () => {
+    const propsWithNegativeTrend = {
+      ...defaultProps,
+      trend: { value: -8.2, label: 'vs last month' },
+    }
     
-    renderWithProviders(<StatsCard />)
+    renderWithProviders(<StatsCard {...propsWithNegativeTrend} />)
     
-    const zeroValues = screen.getAllByText('0')
-    expect(zeroValues.length).toBeGreaterThan(0)
+    expect(screen.getByText('8.2% vs last month')).toBeInTheDocument() // Absolute value
+    expect(screen.getByText('↘')).toBeInTheDocument() // Down arrow for negative trend
   })
 
-  it('formats large numbers correctly', () => {
-    mockUseSummary.mockReturnValue({
-      data: {
-        total_trips: 1234,
-        total_miles: 12345.67,
-        total_clients: 89,
-        this_month: { trips: 123, miles: 1234.5 },
-        this_year: { trips: 1000, miles: 10000.25 },
-      },
-      isLoading: false,
-      isError: false,
-    })
+  it('applies correct color classes for blue theme', () => {
+    const { container } = renderWithProviders(<StatsCard {...defaultProps} color="blue" />)
     
-    renderWithProviders(<StatsCard />)
-    
-    expect(screen.getByText('1,234')).toBeInTheDocument()
-    expect(screen.getByText('12,345.67')).toBeInTheDocument()
+    // Check that the icon container has blue styling - look for the div with blue background
+    const iconContainer = container.querySelector('.bg-ctp-blue\\/10')
+    expect(iconContainer).toBeInTheDocument()
+    expect(iconContainer).toHaveClass('text-ctp-blue', 'border-ctp-blue/20')
   })
 
-  it('shows monthly stats when available', () => {
-    renderWithProviders(<StatsCard />)
+  it('applies correct color classes for green theme', () => {
+    const greenProps = { ...defaultProps, color: 'green' as const }
+    const { container } = renderWithProviders(<StatsCard {...greenProps} />)
     
-    expect(screen.getByText('This Month')).toBeInTheDocument()
-    expect(screen.getByText(/2.*trips/i)).toBeInTheDocument()
-    expect(screen.getByText(/200\.5.*miles/i)).toBeInTheDocument()
+    const iconContainer = container.querySelector('.bg-ctp-green\\/10')
+    expect(iconContainer).toBeInTheDocument()
+    expect(iconContainer).toHaveClass('text-ctp-green', 'border-ctp-green/20')
   })
 
-  it('shows yearly stats when available', () => {
-    renderWithProviders(<StatsCard />)
+  it('applies correct color classes for purple theme', () => {
+    const purpleProps = { ...defaultProps, color: 'purple' as const }
+    const { container } = renderWithProviders(<StatsCard {...purpleProps} />)
     
-    expect(screen.getByText('This Year')).toBeInTheDocument()
-    expect(screen.getByText(/2.*trips/i)).toBeInTheDocument()
-    expect(screen.getByText(/200\.5.*miles/i)).toBeInTheDocument()
+    const iconContainer = container.querySelector('.bg-ctp-mauve\\/10')
+    expect(iconContainer).toBeInTheDocument()
+    expect(iconContainer).toHaveClass('text-ctp-mauve', 'border-ctp-mauve/20')
   })
 
-  it('handles missing monthly/yearly data gracefully', () => {
-    mockUseSummary.mockReturnValue({
-      data: {
-        total_trips: 10,
-        total_miles: 100,
-        total_clients: 5,
-        // Missing this_month and this_year
-      },
-      isLoading: false,
-      isError: false,
-    })
+  it('applies correct color classes for yellow theme', () => {
+    const yellowProps = { ...defaultProps, color: 'yellow' as const }
+    const { container } = renderWithProviders(<StatsCard {...yellowProps} />)
     
-    renderWithProviders(<StatsCard />)
+    const iconContainer = container.querySelector('.bg-ctp-yellow\\/10')
+    expect(iconContainer).toBeInTheDocument()
+    expect(iconContainer).toHaveClass('text-ctp-yellow', 'border-ctp-yellow/20')
+  })
+
+  it('renders with different icons', () => {
+    const dollarProps = {
+      ...defaultProps,
+      title: 'Revenue',
+      icon: CurrencyDollarIcon,
+    }
     
-    // Should still show total stats
-    expect(screen.getByText('Total Trips')).toBeInTheDocument()
-    expect(screen.getByText('10')).toBeInTheDocument()
+    const { container } = renderWithProviders(<StatsCard {...dollarProps} />)
     
-    // Monthly/yearly sections should handle missing data
-    expect(screen.queryByText('This Month')).toBeInTheDocument()
+    expect(screen.getByText('Revenue')).toBeInTheDocument()
+    // Icon should be rendered - check for the icon container div with blue background (default)
+    const iconContainer = container.querySelector('.bg-ctp-blue\\/10')
+    expect(iconContainer).toBeInTheDocument()
+  })
+
+  it('handles numeric values', () => {
+    const numericProps = { ...defaultProps, value: 42 }
+    renderWithProviders(<StatsCard {...numericProps} />)
+    
+    expect(screen.getByText('42')).toBeInTheDocument()
+  })
+
+  it('handles zero values', () => {
+    const zeroProps = { ...defaultProps, value: 0 }
+    renderWithProviders(<StatsCard {...zeroProps} />)
+    
+    expect(screen.getByText('0')).toBeInTheDocument()
   })
 
   it('has proper accessibility structure', () => {
-    renderWithProviders(<StatsCard />)
+    const { container } = renderWithProviders(<StatsCard {...defaultProps} />)
     
-    // Should have proper headings
-    expect(screen.getByRole('heading', { name: /statistics/i })).toBeInTheDocument()
-    
-    // Stats should be in a structured format
-    const statsRegion = screen.getByRole('region', { name: /statistics/i })
-    expect(statsRegion).toBeInTheDocument()
+    // The card should be a focusable container with hover effects
+    const card = container.querySelector('.bg-ctp-surface0')
+    expect(card).toBeInTheDocument()
+    expect(card).toHaveClass('hover:border-ctp-surface2', 'transition-all')
   })
 
-  it('uses semantic HTML for stats presentation', () => {
-    renderWithProviders(<StatsCard />)
+  it('displays trend with green color for positive values', () => {
+    const positiveTrendProps = {
+      ...defaultProps,
+      trend: { value: 15.5, label: 'improvement' },
+    }
     
-    // Stats should be presented as definition lists or similar semantic structure
-    const container = screen.getByRole('region', { name: /statistics/i })
-    expect(container).toBeInTheDocument()
+    const { container } = renderWithProviders(<StatsCard {...positiveTrendProps} />)
     
-    // Each stat should be clearly labeled
-    expect(screen.getByText('Total Trips')).toBeInTheDocument()
-    expect(screen.getByText('Total Miles')).toBeInTheDocument()
-    expect(screen.getByText('Total Clients')).toBeInTheDocument()
+    expect(screen.getByText('15.5% improvement')).toBeInTheDocument()
+    // Look for the trend container with green color
+    const trendContainer = container.querySelector('.text-ctp-green')
+    expect(trendContainer).toBeInTheDocument()
   })
 
-  it('provides helpful context for empty stats', () => {
-    mockUseSummary.mockReturnValue({
-      data: {
-        total_trips: 0,
-        total_miles: 0,
-        total_clients: 0,
-        this_month: { trips: 0, miles: 0 },
-        this_year: { trips: 0, miles: 0 },
-      },
-      isLoading: false,
-      isError: false,
-    })
+  it('displays trend with red color for negative values', () => {
+    const negativeTrendProps = {
+      ...defaultProps,
+      trend: { value: -10.3, label: 'decrease' },
+    }
     
-    renderWithProviders(<StatsCard />)
+    const { container } = renderWithProviders(<StatsCard {...negativeTrendProps} />)
     
-    // Should provide encouraging message or tips for new users
-    expect(screen.getByText(/start tracking/i)).toBeInTheDocument()
+    expect(screen.getByText('10.3% decrease')).toBeInTheDocument()
+    // Look for the trend container with red color
+    const trendContainer = container.querySelector('.text-ctp-red')
+    expect(trendContainer).toBeInTheDocument()
   })
 
-  it('refreshes data appropriately', () => {
-    const { rerender } = renderWithProviders(<StatsCard />)
+  it('renders long titles and values without breaking layout', () => {
+    const longTextProps = {
+      ...defaultProps,
+      title: 'Very Long Statistics Title That Should Not Break Layout',
+      value: '99,999,999.99',
+      subtitle: 'This is a very long subtitle that describes the statistic in detail',
+    }
     
-    // Initial render
-    expect(screen.getByText('2')).toBeInTheDocument()
+    renderWithProviders(<StatsCard {...longTextProps} />)
     
-    // Update mock data
-    mockUseSummary.mockReturnValue({
-      data: {
-        total_trips: 5,
-        total_miles: 500,
-        total_clients: 3,
-        this_month: { trips: 3, miles: 300 },
-        this_year: { trips: 5, miles: 500 },
-      },
-      isLoading: false,
-      isError: false,
-    })
+    expect(screen.getByText('Very Long Statistics Title That Should Not Break Layout')).toBeInTheDocument()
+    expect(screen.getByText('99,999,999.99')).toBeInTheDocument()
+    expect(screen.getByText('This is a very long subtitle that describes the statistic in detail')).toBeInTheDocument()
+  })
+
+  it('renders currency values correctly', () => {
+    const currencyProps = {
+      ...defaultProps,
+      title: 'Tax Deduction',
+      value: '$1,234.56',
+      icon: CurrencyDollarIcon,
+      color: 'green' as const,
+    }
     
-    rerender(<StatsCard />)
+    renderWithProviders(<StatsCard {...currencyProps} />)
     
-    // Should show updated data
-    expect(screen.getByText('5')).toBeInTheDocument()
-    expect(screen.getByText('500')).toBeInTheDocument()
+    expect(screen.getByText('Tax Deduction')).toBeInTheDocument()
+    expect(screen.getByText('$1,234.56')).toBeInTheDocument()
   })
 })

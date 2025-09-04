@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/solid'
 import { useState } from 'react'
 
-export default function EnhancedNavigation() {
+export default function Navigation() {
   const location = useLocation()
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   

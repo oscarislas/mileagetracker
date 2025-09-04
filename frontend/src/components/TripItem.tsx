@@ -14,15 +14,15 @@ import { formatTripDateRelative } from "../utils/dateUtils";
 import TripDetailModal from "./TripDetailModal";
 import type { Trip } from "../types";
 
-interface EnhancedTripItemProps {
+interface TripItemProps {
   trip: Trip;
   showActions?: boolean;
 }
 
-export default function EnhancedTripItem({
+export default function TripItem({
   trip,
   showActions = true,
-}: EnhancedTripItemProps) {
+}: TripItemProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTripModal, setShowTripModal] = useState(false);
   const [modalMode, setModalMode] = useState<"view" | "edit">("view");

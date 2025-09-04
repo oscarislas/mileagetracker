@@ -11,7 +11,7 @@ import { useSummary } from '../hooks/useSummary'
 import { useTrips } from '../hooks/useTrips'
 import type { DateRangeFilter, MilesRangeFilter, TripFilters } from '../types'
 
-export default function EnhancedTripsPage() {
+export default function TripsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
 

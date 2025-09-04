@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react'
-import { 
-  FunnelIcon, 
+import {
+  FunnelIcon,
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
+import { StatsOverviewSkeleton } from '../components/LoadingSkeletons'
 import QuickAddTrip from '../components/QuickAddTrip'
 import TripsList from '../components/TripsList'
-import { StatsOverviewSkeleton } from '../components/LoadingSkeletons'
-import { useSummary } from '../hooks/useSummary'
 import { useAllClients } from '../hooks/useClients'
+import { useSummary } from '../hooks/useSummary'
 import { useTrips } from '../hooks/useTrips'
-import type { TripFilters, DateRangeFilter, MilesRangeFilter } from '../types'
+import type { DateRangeFilter, MilesRangeFilter, TripFilters } from '../types'
 
 export default function EnhancedTripsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
-  
+
   // Filter states
   const [filters, setFilters] = useState<TripFilters>({
     dateRange: '',
@@ -22,7 +22,7 @@ export default function EnhancedTripsPage() {
     milesRange: '',
     searchQuery: ''
   })
-  
+
   // Applied filters (only updated when Apply button is clicked)
   const [appliedFilters, setAppliedFilters] = useState<TripFilters>({
     dateRange: '',
@@ -30,24 +30,24 @@ export default function EnhancedTripsPage() {
     milesRange: '',
     searchQuery: ''
   })
-  
+
   // Update applied filters when search query changes (for immediate search)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setAppliedFilters(prev => ({ ...prev, searchQuery }))
     }, 300) // Debounce search
-    
+
     return () => clearTimeout(timeoutId)
   }, [searchQuery])
-  
+
   const { data: summaryData, isLoading: isSummaryLoading } = useSummary()
   const { data: clientsData } = useAllClients()
   const { data: tripsData } = useTrips(1, 1)
-  
+
   // Calculate totals from summary data
   const totalMiles = summaryData?.months?.reduce((sum, month) => sum + month.total_miles, 0) || 0
   const estimatedDeduction = summaryData?.months?.reduce((sum, month) => sum + month.amount, 0) || 0
-  
+
   return (
     <div className="min-h-screen pb-20 px-4 pt-4 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -56,9 +56,6 @@ export default function EnhancedTripsPage() {
           <h1 className="text-3xl font-bold text-ctp-text mb-2">
             Mileage Tracker
           </h1>
-          <p className="text-ctp-subtext1 max-w-md mx-auto">
-            Track your business trips and maximize your tax deductions
-          </p>
         </div>
 
         {/* Quick stats overview */}
@@ -123,13 +120,13 @@ export default function EnhancedTripsPage() {
       {showFilters && (
         <div className="bg-ctp-surface0 rounded-lg p-4 border border-ctp-surface1 space-y-4">
           <h3 className="font-medium text-ctp-text mb-3">Filter Trips</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="date-range-select" className="block text-sm font-medium text-ctp-text mb-1">
                 Date Range
               </label>
-              <select 
+              <select
                 id="date-range-select"
                 value={filters.dateRange}
                 onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value as DateRangeFilter }))}
@@ -142,12 +139,12 @@ export default function EnhancedTripsPage() {
                 <option value="quarter">This quarter</option>
               </select>
             </div>
-            
+
             <div>
               <label htmlFor="client-select" className="block text-sm font-medium text-ctp-text mb-1">
                 Client
               </label>
-              <select 
+              <select
                 id="client-select"
                 value={filters.clientFilter}
                 onChange={(e) => setFilters(prev => ({ ...prev, clientFilter: e.target.value }))}
@@ -161,12 +158,12 @@ export default function EnhancedTripsPage() {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label htmlFor="miles-range-select" className="block text-sm font-medium text-ctp-text mb-1">
                 Miles Range
               </label>
-              <select 
+              <select
                 id="miles-range-select"
                 value={filters.milesRange}
                 onChange={(e) => setFilters(prev => ({ ...prev, milesRange: e.target.value as MilesRangeFilter }))}
@@ -180,9 +177,9 @@ export default function EnhancedTripsPage() {
               </select>
             </div>
           </div>
-          
+
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={() => {
                 setAppliedFilters({ ...filters, searchQuery: appliedFilters.searchQuery })
               }}
@@ -190,7 +187,7 @@ export default function EnhancedTripsPage() {
             >
               Apply Filters
             </button>
-            <button 
+            <button
               onClick={() => {
                 const clearedFilters: TripFilters = {
                   dateRange: '',
@@ -216,10 +213,10 @@ export default function EnhancedTripsPage() {
           <h2 className="text-lg font-semibold text-ctp-text flex items-center gap-2">
             {appliedFilters.searchQuery || appliedFilters.dateRange || appliedFilters.clientFilter || appliedFilters.milesRange ? 'Filtered Trips' : 'Recent Trips'}
           </h2>
-          
-          <TripsList 
-            enhanced={true} 
-            showPagination={true} 
+
+          <TripsList
+            enhanced={true}
+            showPagination={true}
             limit={10}
             filters={appliedFilters}
           />

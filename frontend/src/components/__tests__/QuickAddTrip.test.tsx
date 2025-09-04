@@ -258,7 +258,12 @@ describe("QuickAddTrip", () => {
     await waitFor(() => {
       expect(screen.getByText("Acme Corp")).toBeInTheDocument();
       expect(screen.getByText("Beta Inc")).toBeInTheDocument();
-      expect(screen.getByText("Test Client")).toBeInTheDocument();
+      // Test Client text is split across elements due to highlighting, so use role-based query
+      const clientOptions = screen.getAllByRole("option");
+      const testClientOption = clientOptions.find((option) =>
+        option.textContent?.includes("Test Client"),
+      );
+      expect(testClientOption).toBeInTheDocument();
     });
   });
 

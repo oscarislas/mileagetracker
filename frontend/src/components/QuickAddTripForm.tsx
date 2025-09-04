@@ -87,9 +87,9 @@ export default function QuickAddTripForm({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -232,7 +232,7 @@ export default function QuickAddTripForm({
                 maxLength={30}
                 aria-describedby="client-suggestions"
               />
-              
+
               {/* Enhanced Client Suggestions */}
               <ClientSuggestions
                 ref={suggestionsRef}
@@ -246,7 +246,6 @@ export default function QuickAddTripForm({
                 positionUp={mode === "modal"}
               />
             </div>
-
           </div>
 
           <div className="flex gap-2">

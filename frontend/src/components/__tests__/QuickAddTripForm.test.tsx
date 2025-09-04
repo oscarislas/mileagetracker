@@ -205,7 +205,7 @@ describe("QuickAddTripForm", () => {
       // Check if suggestions appear (assuming mock data includes clients)
       // The key test is that the dropdown should have the upward positioning classes
       const suggestionContainer = document.querySelector('[role="listbox"]');
-      
+
       if (suggestionContainer) {
         // Check for upward positioning classes
         expect(suggestionContainer).toHaveClass("bottom-full", "mb-2");
@@ -269,15 +269,19 @@ describe("QuickAddTripForm", () => {
         // Check that suggestions are visible by looking for the listbox
         const listbox = screen.getByRole("listbox");
         expect(listbox).toBeInTheDocument();
-        
+
         // Check for options that contain our client names (might have highlighting)
         const options = screen.getAllByRole("option");
         expect(options).toHaveLength(2);
-        
+
         // Verify the text content includes our clients
-        const optionsText = options.map(option => option.textContent);
-        expect(optionsText.some(text => text?.includes("Acme Corp"))).toBe(true);
-        expect(optionsText.some(text => text?.includes("Beta Inc"))).toBe(true);
+        const optionsText = options.map((option) => option.textContent);
+        expect(optionsText.some((text) => text?.includes("Acme Corp"))).toBe(
+          true,
+        );
+        expect(optionsText.some((text) => text?.includes("Beta Inc"))).toBe(
+          true,
+        );
       });
 
       // Click on the first suggestion
@@ -514,10 +518,12 @@ describe("QuickAddTripForm", () => {
 
         const options = screen.getAllByRole("option");
         expect(options).toHaveLength(2);
-        
+
         // Check text content includes our clients
-        const optionsText = options.map(option => option.textContent);
-        expect(optionsText.some(text => text?.includes("Acme Corp"))).toBe(true);
+        const optionsText = options.map((option) => option.textContent);
+        expect(optionsText.some((text) => text?.includes("Acme Corp"))).toBe(
+          true,
+        );
       });
     });
 

@@ -128,8 +128,8 @@ export default function Navigation() {
           aria-modal="true"
           aria-labelledby="modal-title"
         >
-          <div className="bg-ctp-base rounded-t-xl md:rounded-xl w-full max-w-md max-h-[80vh] overflow-auto">
-            <div className="p-6">
+          <div className="bg-ctp-base rounded-t-xl md:rounded-xl w-full max-w-md max-h-[85vh] flex flex-col relative">
+            <div className="p-6 min-h-0">
               <div className="flex items-center justify-between mb-4">
                 <h2
                   id="modal-title"

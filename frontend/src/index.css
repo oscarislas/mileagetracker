@@ -108,6 +108,26 @@
   .transition-smooth {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Animation utilities */
+  @keyframes slide-in-from-top {
+    from {
+      opacity: 0;
+      transform: translateY(-0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-in {
+    animation-fill-mode: both;
+  }
+
+  .slide-in-from-top-2 {
+    animation: slide-in-from-top 0.15s ease-out;
+  }
 }
 
 @layer utilities {

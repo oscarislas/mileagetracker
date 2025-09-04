@@ -148,6 +148,9 @@ export default function AddTripForm() {
               clients={clientSuggestions.suggestions?.data?.clients || []}
               show={clientSuggestions.showSuggestions}
               onSelect={handleClientSelect}
+              isLoading={clientSuggestions.suggestions?.isLoading}
+              query={formData.client_name}
+              noResultsMessage="No matching clients found"
             />
           </div>
         </FormField>

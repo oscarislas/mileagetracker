@@ -336,7 +336,7 @@ describe("Navigation", () => {
       const modalContent = screen
         .getByRole("dialog")
         .querySelector(".bg-ctp-base");
-      expect(modalContent).toHaveClass("max-w-md", "max-h-[80vh]");
+      expect(modalContent).toHaveClass("max-w-md", "max-h-[85vh]");
     });
   });
 

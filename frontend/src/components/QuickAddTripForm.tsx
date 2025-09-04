@@ -4,6 +4,7 @@ import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { useCreateTrip } from "../hooks/useTrips";
 import { useClientSuggestions } from "../hooks/useClients";
 import { getTodayDateString } from "../utils/dateUtils";
+import { ClientSuggestions } from "./ui";
 import type { CreateTripRequest } from "../types";
 
 export interface QuickAddTripFormProps {
@@ -32,9 +33,11 @@ export default function QuickAddTripForm({
     miles: 0,
     notes: "",
   });
+  const [showClientSuggestions, setShowClientSuggestions] = useState(false);
 
   const clientInputRef = useRef<HTMLInputElement>(null);
   const milesInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const createTripMutation = useCreateTrip();
   const { data: clientSuggestions } = useClientSuggestions(
@@ -50,9 +53,45 @@ export default function QuickAddTripForm({
 
   const handleClientSubmit = (clientName: string) => {
     setFormData({ ...formData, client_name: clientName });
+    setShowClientSuggestions(false);
     setStep("details");
     setTimeout(() => milesInputRef.current?.focus(), 100);
   };
+
+  const handleClientSelect = (clientName: string) => {
+    handleClientSubmit(clientName);
+  };
+
+  const handleClientNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormData({ ...formData, client_name: value });
+    setShowClientSuggestions(value.length > 0);
+  };
+
+  const handleClientNameFocus = () => {
+    if (formData.client_name.length > 0) {
+      setShowClientSuggestions(true);
+    }
+  };
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node) &&
+        clientInputRef.current &&
+        !clientInputRef.current.contains(event.target as Node)
+      ) {
+        setShowClientSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleSubmit = () => {
     if (formData.miles > 0) {
@@ -138,7 +177,7 @@ export default function QuickAddTripForm({
   // Form container styling based on mode
   const containerClasses =
     mode === "modal"
-      ? `space-y-4 ${className}`
+      ? `space-y-4 overflow-visible ${className}`
       : `bg-ctp-surface0 rounded-xl p-6 border border-ctp-surface1 space-y-4 ${className}`;
 
   return (
@@ -168,52 +207,46 @@ export default function QuickAddTripForm({
             >
               Who did you visit?
             </label>
-            <div className="relative">
+            <div className="relative overflow-visible min-h-[44px]">
               <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-ctp-subtext1" />
               <input
                 id="client-name-input"
                 ref={clientInputRef}
                 type="text"
                 value={formData.client_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, client_name: e.target.value })
-                }
+                onChange={handleClientNameChange}
+                onFocus={handleClientNameFocus}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && formData.client_name.trim()) {
                     handleClientSubmit(formData.client_name);
                   }
-                  if (e.key === "Escape" && mode === "modal") {
-                    handleCancel();
+                  if (e.key === "Escape") {
+                    setShowClientSuggestions(false);
+                    if (mode === "modal") {
+                      handleCancel();
+                    }
                   }
                 }}
-                className="w-full pl-10 pr-4 py-3 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent transition-all duration-150"
                 placeholder="Start typing client name..."
                 maxLength={30}
                 aria-describedby="client-suggestions"
               />
+              
+              {/* Enhanced Client Suggestions */}
+              <ClientSuggestions
+                ref={suggestionsRef}
+                clients={clientSuggestions?.clients || []}
+                show={showClientSuggestions}
+                onSelect={handleClientSelect}
+                isLoading={false}
+                query={formData.client_name}
+                maxItems={3}
+                noResultsMessage="No clients found - create a new one!"
+                positionUp={mode === "modal"}
+              />
             </div>
 
-            {/* Client suggestions */}
-            {clientSuggestions?.clients &&
-              clientSuggestions.clients.length > 0 &&
-              formData.client_name.length > 0 && (
-                <div
-                  id="client-suggestions"
-                  className="mt-2 space-y-1"
-                  role="listbox"
-                >
-                  {clientSuggestions.clients.slice(0, 3).map((client) => (
-                    <button
-                      key={client.id}
-                      onClick={() => handleClientSubmit(client.name)}
-                      className="w-full text-left px-3 py-2 hover:bg-ctp-surface1 text-ctp-text rounded-lg text-sm focus:ring-2 focus:ring-ctp-blue focus:outline-none"
-                      role="option"
-                    >
-                      {client.name}
-                    </button>
-                  ))}
-                </div>
-              )}
           </div>
 
           <div className="flex gap-2">

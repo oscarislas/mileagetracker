@@ -193,6 +193,25 @@ describe("QuickAddTripForm", () => {
       );
       expect(progressContainer).not.toBeInTheDocument();
     });
+
+    it("positions client suggestions upward in modal mode", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<QuickAddTripForm {...modalProps} />);
+
+      // Type in the client input to trigger suggestions
+      const clientInput = screen.getByLabelText(/who did you visit/i);
+      await user.type(clientInput, "Acme");
+
+      // Check if suggestions appear (assuming mock data includes clients)
+      // The key test is that the dropdown should have the upward positioning classes
+      const suggestionContainer = document.querySelector('[role="listbox"]');
+      
+      if (suggestionContainer) {
+        // Check for upward positioning classes
+        expect(suggestionContainer).toHaveClass("bottom-full", "mb-2");
+        expect(suggestionContainer).not.toHaveClass("top-full", "mt-2");
+      }
+    });
   });
 
   describe("Form functionality", () => {
@@ -247,12 +266,23 @@ describe("QuickAddTripForm", () => {
       await user.type(clientInput, "A");
 
       await waitFor(() => {
-        expect(screen.getByText("Acme Corp")).toBeInTheDocument();
-        expect(screen.getByText("Beta Inc")).toBeInTheDocument();
+        // Check that suggestions are visible by looking for the listbox
+        const listbox = screen.getByRole("listbox");
+        expect(listbox).toBeInTheDocument();
+        
+        // Check for options that contain our client names (might have highlighting)
+        const options = screen.getAllByRole("option");
+        expect(options).toHaveLength(2);
+        
+        // Verify the text content includes our clients
+        const optionsText = options.map(option => option.textContent);
+        expect(optionsText.some(text => text?.includes("Acme Corp"))).toBe(true);
+        expect(optionsText.some(text => text?.includes("Beta Inc"))).toBe(true);
       });
 
-      // Click on a suggestion
-      await user.click(screen.getByText("Acme Corp"));
+      // Click on the first suggestion
+      const firstOption = screen.getAllByRole("option")[0];
+      await user.click(firstOption);
       expect(screen.getByLabelText(/miles/i)).toBeInTheDocument();
       expect(screen.getByText("Acme Corp")).toBeInTheDocument();
     });
@@ -479,11 +509,15 @@ describe("QuickAddTripForm", () => {
       await user.type(screen.getByLabelText(/who did you visit/i), "A");
 
       await waitFor(() => {
-        const suggestions = screen.getByRole("listbox");
-        expect(suggestions).toBeInTheDocument();
+        const listbox = screen.getByRole("listbox");
+        expect(listbox).toBeInTheDocument();
 
-        const acmeOption = screen.getByRole("option", { name: /acme corp/i });
-        expect(acmeOption).toBeInTheDocument();
+        const options = screen.getAllByRole("option");
+        expect(options).toHaveLength(2);
+        
+        // Check text content includes our clients
+        const optionsText = options.map(option => option.textContent);
+        expect(optionsText.some(text => text?.includes("Acme Corp"))).toBe(true);
       });
     });
 

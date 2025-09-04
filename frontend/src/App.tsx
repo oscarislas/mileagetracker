@@ -1,9 +1,9 @@
-import { Routes, Route } from 'react-router-dom'
-import Navigation from './components/Navigation'
-import TripsPage from './pages/TripsPage'
-import SummaryPage from './pages/SummaryPage'
-import SettingsPage from './pages/SettingsPage'
-import './App.css'
+import { Routes, Route } from "react-router-dom";
+import Navigation from "./components/Navigation";
+import TripsPage from "./pages/TripsPage";
+import SummaryPage from "./pages/SummaryPage";
+import SettingsPage from "./pages/SettingsPage";
+import "./App.css";
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
       </Routes>
       <Navigation />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

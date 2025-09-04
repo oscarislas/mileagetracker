@@ -84,7 +84,7 @@ test-backend: ## Run backend tests
 
 test-frontend: ## Run frontend tests
 	@echo "$(GREEN)Running frontend tests...$(NC)"
-	@cd $(FRONTEND_DIR) && npm test
+	@cd $(FRONTEND_DIR) && npx vitest run
 
 test-e2e: ## Run end-to-end tests
 	@echo "$(GREEN)Running E2E tests...$(NC)"
@@ -113,7 +113,7 @@ lint: ## Run linting for all projects
 
 lint-backend: ## Run backend linting
 	@echo "$(GREEN)Linting backend...$(NC)"
-	@cd $(BACKEND_DIR) && golangci-lint run
+	@cd $(BACKEND_DIR) && if command -v golangci-lint >/dev/null 2>&1; then golangci-lint run; else echo "$(YELLOW)golangci-lint not found, using go vet instead$(NC)" && go vet ./...; fi
 
 lint-frontend: ## Run frontend linting
 	@echo "$(GREEN)Linting frontend...$(NC)"
@@ -126,7 +126,7 @@ format: ## Format all code
 format-backend: ## Format backend code
 	@echo "$(GREEN)Formatting backend code...$(NC)"
 	@cd $(BACKEND_DIR) && go fmt ./...
-	@cd $(BACKEND_DIR) && goimports -w .
+	@cd $(BACKEND_DIR) && if command -v goimports >/dev/null 2>&1; then goimports -w .; else echo "$(YELLOW)goimports not found, skipping import formatting$(NC)"; fi
 
 format-frontend: ## Format frontend code
 	@echo "$(GREEN)Formatting frontend code...$(NC)"
@@ -178,3 +178,42 @@ quick-start: build up ## Quick start: build and run all services
 generate-client: ## Generate OpenAPI client for frontend
 	@echo "$(GREEN)Generating OpenAPI client...$(NC)"
 	@cd $(FRONTEND_DIR) && npm run generate:api
+
+# Quality assurance - run all checks
+check: ## Run all linters, formatters, type checks, and builds
+	@echo "$(GREEN)Running complete quality check...$(NC)"
+	@echo "$(YELLOW)Step 1/6: Formatting code...$(NC)"
+	@$(MAKE) format
+	@echo "$(YELLOW)Step 2/6: Running linters...$(NC)"
+	@$(MAKE) lint
+	@echo "$(YELLOW)Step 3/6: Running type checks...$(NC)"
+	@$(MAKE) typecheck
+	@echo "$(YELLOW)Step 4/6: Building backend...$(NC)"
+	@$(MAKE) build-backend-local
+	@echo "$(YELLOW)Step 5/6: Building frontend...$(NC)"
+	@$(MAKE) build-frontend-local
+	@echo "$(YELLOW)Step 6/6: Running tests...$(NC)"
+	@$(MAKE) test
+	@echo "$(GREEN)✅ All quality checks passed!$(NC)"
+
+# Type checking
+typecheck: ## Run TypeScript type checking
+	@$(MAKE) typecheck-backend
+	@$(MAKE) typecheck-frontend
+
+typecheck-backend: ## Run Go type checking and vet
+	@echo "$(GREEN)Type checking backend...$(NC)"
+	@cd $(BACKEND_DIR) && go vet ./...
+
+typecheck-frontend: ## Run TypeScript type checking
+	@echo "$(GREEN)Type checking frontend...$(NC)"
+	@cd $(FRONTEND_DIR) && npx tsc --noEmit
+
+# Local builds (without Docker)
+build-backend-local: ## Build backend locally
+	@echo "$(GREEN)Building backend locally...$(NC)"
+	@cd $(BACKEND_DIR) && go build -o bin/server cmd/server/main.go
+
+build-frontend-local: ## Build frontend locally
+	@echo "$(GREEN)Building frontend locally...$(NC)"
+	@cd $(FRONTEND_DIR) && npm run build

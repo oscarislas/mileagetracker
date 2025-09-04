@@ -1,5 +1,5 @@
-import React from 'react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Create a test query client with no retries for faster tests
 const createTestQueryClient = () =>
@@ -14,22 +14,16 @@ const createTestQueryClient = () =>
         retry: false,
       },
     },
-    logger: {
-      log: () => {},
-      warn: () => {},
-      error: () => {},
-    },
-  })
+  });
 
 // Wrapper component for tests that need React Query
 export function AllTheProviders({ children }: { children: React.ReactNode }) {
-  const queryClient = createTestQueryClient()
+  const queryClient = createTestQueryClient();
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  )
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
 }
 
 // Also export the query client creator for direct use in tests
-export { createTestQueryClient }
+// eslint-disable-next-line react-refresh/only-export-components
+export { createTestQueryClient };

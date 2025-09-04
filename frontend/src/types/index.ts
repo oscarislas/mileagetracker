@@ -71,8 +71,8 @@ export interface MessageResponse {
 }
 
 // Filter Types
-export type DateRangeFilter = 'today' | 'week' | 'month' | 'quarter' | '';
-export type MilesRangeFilter = '0-10' | '10-50' | '50-100' | '100+' | '';
+export type DateRangeFilter = "today" | "week" | "month" | "quarter" | "";
+export type MilesRangeFilter = "0-10" | "10-50" | "50-100" | "100+" | "";
 
 export interface TripFilters {
   dateRange: DateRangeFilter;

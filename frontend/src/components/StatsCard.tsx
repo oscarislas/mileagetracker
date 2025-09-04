@@ -1,34 +1,40 @@
-import React from 'react'
-import { ChartBarIcon, CurrencyDollarIcon, TruckIcon, ClockIcon } from '@heroicons/react/24/outline'
+import React from "react";
+import {
+  ChartBarIcon,
+  CurrencyDollarIcon,
+  TruckIcon,
+  ClockIcon,
+} from "@heroicons/react/24/outline";
 
 interface StatsCardProps {
-  title: string
-  value: string | number
-  subtitle?: string
-  icon: React.ComponentType<{ className?: string }>
-  color?: 'blue' | 'green' | 'purple' | 'yellow'
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color?: "blue" | "green" | "purple" | "yellow";
   trend?: {
-    value: number
-    label: string
-  }
+    value: number;
+    label: string;
+  };
 }
 
-export default function StatsCard({ 
-  title, 
-  value, 
-  subtitle, 
-  icon: Icon, 
-  color = 'blue',
-  trend 
+export default function StatsCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  color = "blue",
+  trend,
 }: StatsCardProps) {
   const colorClasses = {
-    blue: 'bg-ctp-blue/10 text-ctp-blue border-ctp-blue/20',
-    green: 'bg-ctp-green/10 text-ctp-green border-ctp-green/20',
-    purple: 'bg-ctp-mauve/10 text-ctp-mauve border-ctp-mauve/20',
-    yellow: 'bg-ctp-yellow/10 text-ctp-yellow border-ctp-yellow/20'
-  }
+    blue: "bg-ctp-blue/10 text-ctp-blue border-ctp-blue/20",
+    green: "bg-ctp-green/10 text-ctp-green border-ctp-green/20",
+    purple: "bg-ctp-mauve/10 text-ctp-mauve border-ctp-mauve/20",
+    yellow: "bg-ctp-yellow/10 text-ctp-yellow border-ctp-yellow/20",
+  };
 
-  const trendColor = trend && trend.value >= 0 ? 'text-ctp-green' : 'text-ctp-red'
+  const trendColor =
+    trend && trend.value >= 0 ? "text-ctp-green" : "text-ctp-red";
 
   return (
     <div className="bg-ctp-surface0 rounded-xl p-4 border border-ctp-surface1 hover:border-ctp-surface2 transition-all duration-200">
@@ -41,14 +47,18 @@ export default function StatsCard({
             <div>
               <h3 className="text-sm font-medium text-ctp-subtext1">{title}</h3>
               {trend && (
-                <div className={`text-xs ${trendColor} flex items-center gap-1`}>
-                  <span>{trend.value >= 0 ? '↗' : '↘'}</span>
-                  <span>{Math.abs(trend.value)}% {trend.label}</span>
+                <div
+                  className={`text-xs ${trendColor} flex items-center gap-1`}
+                >
+                  <span>{trend.value >= 0 ? "↗" : "↘"}</span>
+                  <span>
+                    {Math.abs(trend.value)}% {trend.label}
+                  </span>
                 </div>
               )}
             </div>
           </div>
-          
+
           <div className="space-y-1">
             <p className="text-2xl font-bold text-ctp-text">{value}</p>
             {subtitle && (
@@ -58,7 +68,7 @@ export default function StatsCard({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Usage example component
@@ -73,7 +83,7 @@ export function DashboardStats() {
         color="blue"
         trend={{ value: 12.5, label: "vs last month" }}
       />
-      
+
       <StatsCard
         title="Tax Deduction"
         value="$834.35"
@@ -82,7 +92,7 @@ export function DashboardStats() {
         color="green"
         trend={{ value: 8.3, label: "vs last month" }}
       />
-      
+
       <StatsCard
         title="Active Clients"
         value="8"
@@ -90,7 +100,7 @@ export function DashboardStats() {
         icon={ChartBarIcon}
         color="purple"
       />
-      
+
       <StatsCard
         title="Avg per Trip"
         value="45.2 mi"
@@ -100,5 +110,5 @@ export function DashboardStats() {
         trend={{ value: -5.2, label: "vs last month" }}
       />
     </div>
-  )
+  );
 }

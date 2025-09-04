@@ -1,52 +1,52 @@
-import {
-  FunnelIcon,
-  MagnifyingGlassIcon
-} from '@heroicons/react/24/outline'
-import { useEffect, useState } from 'react'
-import { StatsOverviewSkeleton } from '../components/LoadingSkeletons'
-import QuickAddTrip from '../components/QuickAddTrip'
-import TripsList from '../components/TripsList'
-import { useAllClients } from '../hooks/useClients'
-import { useSummary } from '../hooks/useSummary'
-import { useTrips } from '../hooks/useTrips'
-import type { DateRangeFilter, MilesRangeFilter, TripFilters } from '../types'
+import { FunnelIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
+import { StatsOverviewSkeleton } from "../components/LoadingSkeletons";
+import QuickAddTrip from "../components/QuickAddTrip";
+import TripsList from "../components/TripsList";
+import { useAllClients } from "../hooks/useClients";
+import { useSummary } from "../hooks/useSummary";
+import { useTrips } from "../hooks/useTrips";
+import type { DateRangeFilter, MilesRangeFilter, TripFilters } from "../types";
 
 export default function TripsPage() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showFilters, setShowFilters] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
 
   // Filter states
   const [filters, setFilters] = useState<TripFilters>({
-    dateRange: '',
-    clientFilter: '',
-    milesRange: '',
-    searchQuery: ''
-  })
+    dateRange: "",
+    clientFilter: "",
+    milesRange: "",
+    searchQuery: "",
+  });
 
   // Applied filters (only updated when Apply button is clicked)
   const [appliedFilters, setAppliedFilters] = useState<TripFilters>({
-    dateRange: '',
-    clientFilter: '',
-    milesRange: '',
-    searchQuery: ''
-  })
+    dateRange: "",
+    clientFilter: "",
+    milesRange: "",
+    searchQuery: "",
+  });
 
   // Update applied filters when search query changes (for immediate search)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      setAppliedFilters(prev => ({ ...prev, searchQuery }))
-    }, 300) // Debounce search
+      setAppliedFilters((prev) => ({ ...prev, searchQuery }));
+    }, 300); // Debounce search
 
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery])
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
-  const { data: summaryData, isLoading: isSummaryLoading } = useSummary()
-  const { data: clientsData } = useAllClients()
-  const { data: tripsData } = useTrips(1, 1)
+  const { data: summaryData, isLoading: isSummaryLoading } = useSummary();
+  const { data: clientsData } = useAllClients();
+  const { data: tripsData } = useTrips(1, 1);
 
   // Calculate totals from summary data
-  const totalMiles = summaryData?.months?.reduce((sum, month) => sum + month.total_miles, 0) || 0
-  const estimatedDeduction = summaryData?.months?.reduce((sum, month) => sum + month.amount, 0) || 0
+  const totalMiles =
+    summaryData?.months?.reduce((sum, month) => sum + month.total_miles, 0) ||
+    0;
+  const estimatedDeduction =
+    summaryData?.months?.reduce((sum, month) => sum + month.amount, 0) || 0;
 
   return (
     <div className="min-h-screen pb-20 px-4 pt-4 space-y-6 max-w-7xl mx-auto">
@@ -123,13 +123,21 @@ export default function TripsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="date-range-select" className="block text-sm font-medium text-ctp-text mb-1">
+              <label
+                htmlFor="date-range-select"
+                className="block text-sm font-medium text-ctp-text mb-1"
+              >
                 Date Range
               </label>
               <select
                 id="date-range-select"
                 value={filters.dateRange}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value as DateRangeFilter }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    dateRange: e.target.value as DateRangeFilter,
+                  }))
+                }
                 className="w-full px-3 py-2 text-sm border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
               >
                 <option value="">All dates</option>
@@ -141,17 +149,25 @@ export default function TripsPage() {
             </div>
 
             <div>
-              <label htmlFor="client-select" className="block text-sm font-medium text-ctp-text mb-1">
+              <label
+                htmlFor="client-select"
+                className="block text-sm font-medium text-ctp-text mb-1"
+              >
                 Client
               </label>
               <select
                 id="client-select"
                 value={filters.clientFilter}
-                onChange={(e) => setFilters(prev => ({ ...prev, clientFilter: e.target.value }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    clientFilter: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 text-sm border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
               >
                 <option value="">All clients</option>
-                {clientsData?.clients.map(client => (
+                {clientsData?.clients.map((client) => (
                   <option key={client.id} value={client.name}>
                     {client.name}
                   </option>
@@ -160,13 +176,21 @@ export default function TripsPage() {
             </div>
 
             <div>
-              <label htmlFor="miles-range-select" className="block text-sm font-medium text-ctp-text mb-1">
+              <label
+                htmlFor="miles-range-select"
+                className="block text-sm font-medium text-ctp-text mb-1"
+              >
                 Miles Range
               </label>
               <select
                 id="miles-range-select"
                 value={filters.milesRange}
-                onChange={(e) => setFilters(prev => ({ ...prev, milesRange: e.target.value as MilesRangeFilter }))}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    milesRange: e.target.value as MilesRangeFilter,
+                  }))
+                }
                 className="w-full px-3 py-2 text-sm border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
               >
                 <option value="">Any distance</option>
@@ -181,7 +205,10 @@ export default function TripsPage() {
           <div className="flex gap-2">
             <button
               onClick={() => {
-                setAppliedFilters({ ...filters, searchQuery: appliedFilters.searchQuery })
+                setAppliedFilters({
+                  ...filters,
+                  searchQuery: appliedFilters.searchQuery,
+                });
               }}
               className="px-4 py-2 text-sm bg-ctp-blue text-white rounded-lg hover:bg-ctp-blue/90 transition-colors"
             >
@@ -190,14 +217,14 @@ export default function TripsPage() {
             <button
               onClick={() => {
                 const clearedFilters: TripFilters = {
-                  dateRange: '',
-                  clientFilter: '',
-                  milesRange: '',
-                  searchQuery: ''
-                }
-                setFilters(clearedFilters)
-                setAppliedFilters(clearedFilters)
-                setSearchQuery('')
+                  dateRange: "",
+                  clientFilter: "",
+                  milesRange: "",
+                  searchQuery: "",
+                };
+                setFilters(clearedFilters);
+                setAppliedFilters(clearedFilters);
+                setSearchQuery("");
               }}
               className="px-4 py-2 text-sm text-ctp-subtext1 hover:text-ctp-text transition-colors"
             >
@@ -211,7 +238,12 @@ export default function TripsPage() {
       <div className="space-y-4">
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-ctp-text flex items-center gap-2">
-            {appliedFilters.searchQuery || appliedFilters.dateRange || appliedFilters.clientFilter || appliedFilters.milesRange ? 'Filtered Trips' : 'Recent Trips'}
+            {appliedFilters.searchQuery ||
+            appliedFilters.dateRange ||
+            appliedFilters.clientFilter ||
+            appliedFilters.milesRange
+              ? "Filtered Trips"
+              : "Recent Trips"}
           </h2>
 
           <TripsList
@@ -223,5 +255,5 @@ export default function TripsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -283,11 +283,11 @@ func TestTripRepository_GetPaginated_WithFilters(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(2), total) // 2 Acme trips
 		assert.Len(t, trips, 2)
-		
+
 		// Verify all results contain "acme" in client_name or notes (case insensitive)
 		for _, trip := range trips {
 			containsAcme := strings.Contains(strings.ToLower(trip.ClientName), "acme") ||
-							strings.Contains(strings.ToLower(trip.Notes), "acme")
+				strings.Contains(strings.ToLower(trip.Notes), "acme")
 			assert.True(t, containsAcme, "Trip should contain 'acme' in client_name or notes: %+v", trip)
 		}
 	})
@@ -316,7 +316,7 @@ func TestTripRepository_GetPaginated_WithFilters(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(3), total) // 3 trips in date range
 		assert.Len(t, trips, 3)
-		
+
 		// Verify all trips are within date range
 		for _, trip := range trips {
 			// Extract date part for comparison (handles SQLite returning datetime)
@@ -339,7 +339,7 @@ func TestTripRepository_GetPaginated_WithFilters(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(3), total) // 3 trips with miles between 75-150
 		assert.Len(t, trips, 3)
-		
+
 		// Verify all trips are within miles range
 		for _, trip := range trips {
 			assert.GreaterOrEqual(t, trip.Miles, 75.0)
@@ -358,7 +358,7 @@ func TestTripRepository_GetPaginated_WithFilters(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(3), total) // 3 trips with 100+ miles
 		assert.Len(t, trips, 3)
-		
+
 		// Verify all trips meet minimum miles
 		for _, trip := range trips {
 			assert.GreaterOrEqual(t, trip.Miles, 100.0)
@@ -376,7 +376,7 @@ func TestTripRepository_GetPaginated_WithFilters(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(3), total) // 3 trips with <=75 miles
 		assert.Len(t, trips, 3)
-		
+
 		// Verify all trips meet maximum miles
 		for _, trip := range trips {
 			assert.LessOrEqual(t, trip.Miles, 75.0)
@@ -396,11 +396,11 @@ func TestTripRepository_GetPaginated_WithFilters(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, int64(2), total) // 2 Acme Corp trips in 2025 with 50+ miles
 		assert.Len(t, trips, 2)
-		
+
 		// Verify all conditions are met
 		for _, trip := range trips {
 			containsCorp := strings.Contains(strings.ToLower(trip.ClientName), "corp") ||
-							strings.Contains(strings.ToLower(trip.Notes), "corp")
+				strings.Contains(strings.ToLower(trip.Notes), "corp")
 			assert.True(t, containsCorp)
 			// Extract date part for comparison (handles SQLite returning datetime)
 			tripDate := strings.Split(trip.TripDate, "T")[0]
@@ -457,15 +457,15 @@ func TestTripRepository_GetPaginated_WithFilters(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, int64(5), total) // 5 trips in 2025
-		assert.Len(t, trips, 2)         // Page size of 2
-		
+		assert.Len(t, trips, 2)          // Page size of 2
+
 		// Get second page
 		trips2, total2, err := repo.GetPaginated(context.Background(), 2, 2, filters)
 
 		assert.NoError(t, err)
 		assert.Equal(t, int64(5), total2) // Same total
 		assert.Len(t, trips2, 2)          // Page size of 2
-		
+
 		// Verify different results
 		assert.NotEqual(t, trips[0].ID, trips2[0].ID)
 		assert.NotEqual(t, trips[1].ID, trips2[1].ID)

@@ -145,7 +145,7 @@ func (r *tripRepository) GetPaginated(ctx context.Context, page, limit int, filt
 
 	// Start with base query
 	baseQuery := r.db.WithContext(ctxWithTimeout).Table("trips")
-	
+
 	// Apply filters to the base query
 	filteredQuery := r.buildFilteredQuery(baseQuery, filters)
 

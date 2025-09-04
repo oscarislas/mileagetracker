@@ -40,10 +40,10 @@ type UpdateTripRequest struct {
 
 // TripFilters represents the filters that can be applied when retrieving trips
 type TripFilters struct {
-	Search    string   `json:"search,omitempty"`     // Search in client_name and notes
-	Client    string   `json:"client,omitempty"`     // Filter by specific client name
-	DateFrom  string   `json:"date_from,omitempty"`  // Filter trips from this date (YYYY-MM-DD)
-	DateTo    string   `json:"date_to,omitempty"`    // Filter trips up to this date (YYYY-MM-DD)
-	MinMiles  *float64 `json:"min_miles,omitempty"`  // Minimum miles filter
-	MaxMiles  *float64 `json:"max_miles,omitempty"`  // Maximum miles filter
+	Search   string   `json:"search,omitempty"`    // Search in client_name and notes
+	Client   string   `json:"client,omitempty"`    // Filter by specific client name
+	DateFrom string   `json:"date_from,omitempty"` // Filter trips from this date (YYYY-MM-DD)
+	DateTo   string   `json:"date_to,omitempty"`   // Filter trips up to this date (YYYY-MM-DD)
+	MinMiles *float64 `json:"min_miles,omitempty"` // Minimum miles filter
+	MaxMiles *float64 `json:"max_miles,omitempty"` // Maximum miles filter
 }

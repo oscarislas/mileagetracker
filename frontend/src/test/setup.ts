@@ -1,15 +1,15 @@
-import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import "@testing-library/jest-dom";
+import { vi } from "vitest";
 
 // Mock ResizeObserver for tests
 global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
-}
+};
 
 // Mock matchMedia for mobile tests
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
     matches: false,
@@ -21,11 +21,11 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: () => {},
     dispatchEvent: () => {},
   }),
-})
+});
 
 // Mock axios completely to prevent real HTTP requests
-vi.mock('axios', async () => {
-  const actual = await vi.importActual('axios')
+vi.mock("axios", async () => {
+  const actual = await vi.importActual("axios");
   return {
     ...actual,
     default: {
@@ -44,11 +44,11 @@ vi.mock('axios', async () => {
         response: { use: vi.fn(), eject: vi.fn() },
       },
     },
-  }
-})
+  };
+});
 
 // Mock window.confirm for deletion tests
-Object.defineProperty(window, 'confirm', {
+Object.defineProperty(window, "confirm", {
   writable: true,
   value: vi.fn(() => true),
-})
+});

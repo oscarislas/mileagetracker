@@ -19,10 +19,7 @@ interface TripItemProps {
   showActions?: boolean;
 }
 
-export default function TripItem({
-  trip,
-  showActions = true,
-}: TripItemProps) {
+export default function TripItem({ trip, showActions = true }: TripItemProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTripModal, setShowTripModal] = useState(false);
   const [modalMode, setModalMode] = useState<"view" | "edit">("view");

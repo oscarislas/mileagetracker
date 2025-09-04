@@ -1,51 +1,51 @@
-import { Link, useLocation } from 'react-router-dom'
-import { 
-  HomeIcon, 
+import { Link, useLocation } from "react-router-dom";
+import {
+  HomeIcon,
   CogIcon,
   ChartBarIcon,
-  PlusIcon 
-} from '@heroicons/react/24/outline'
-import { 
-  HomeIcon as HomeIconSolid, 
+  PlusIcon,
+} from "@heroicons/react/24/outline";
+import {
+  HomeIcon as HomeIconSolid,
   CogIcon as CogIconSolid,
-  ChartBarIcon as ChartBarIconSolid 
-} from '@heroicons/react/24/solid'
-import { useState } from 'react'
+  ChartBarIcon as ChartBarIconSolid,
+} from "@heroicons/react/24/solid";
+import { useState } from "react";
 
 export default function Navigation() {
-  const location = useLocation()
-  const [showQuickAdd, setShowQuickAdd] = useState(false)
-  
-  const isTrips = location.pathname === '/' || location.pathname === '/trips'
-  const isSettings = location.pathname === '/settings'
-  const isSummary = location.pathname === '/summary'
+  const location = useLocation();
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+
+  const isTrips = location.pathname === "/" || location.pathname === "/trips";
+  const isSettings = location.pathname === "/settings";
+  const isSummary = location.pathname === "/summary";
 
   const navItems = [
     {
-      to: '/',
-      label: 'Trips',
+      to: "/",
+      label: "Trips",
       icon: HomeIcon,
       iconSolid: HomeIconSolid,
       isActive: isTrips,
-      color: 'ctp-blue'
+      color: "ctp-blue",
     },
     {
-      to: '/summary',
-      label: 'Summary',
+      to: "/summary",
+      label: "Summary",
       icon: ChartBarIcon,
       iconSolid: ChartBarIconSolid,
       isActive: isSummary,
-      color: 'ctp-green'
+      color: "ctp-green",
     },
     {
-      to: '/settings',
-      label: 'Settings',
+      to: "/settings",
+      label: "Settings",
       icon: CogIcon,
       iconSolid: CogIconSolid,
       isActive: isSettings,
-      color: 'ctp-mauve'
-    }
-  ]
+      color: "ctp-mauve",
+    },
+  ];
 
   return (
     <>
@@ -53,8 +53,8 @@ export default function Navigation() {
       <nav className="fixed bottom-0 left-0 right-0 bg-ctp-base/95 backdrop-blur-md border-t border-ctp-surface0 safe-area-pb z-40">
         <div className="flex items-center justify-around px-4 py-2">
           {navItems.map((item) => {
-            const Icon = item.isActive ? item.iconSolid : item.icon
-            
+            const Icon = item.isActive ? item.iconSolid : item.icon;
+
             return (
               <Link
                 key={item.to}
@@ -62,15 +62,15 @@ export default function Navigation() {
                 className={`flex flex-col items-center px-3 py-2 rounded-xl transition-all duration-200 ${
                   item.isActive
                     ? `text-${item.color} bg-${item.color}/10 shadow-sm`
-                    : 'text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0'
+                    : "text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0"
                 }`}
               >
                 <Icon className="h-5 w-5 mb-1" />
                 <span className="text-xs font-medium">{item.label}</span>
               </Link>
-            )
+            );
           })}
-          
+
           {/* Quick Add FAB */}
           <button
             onClick={() => setShowQuickAdd(true)}
@@ -87,7 +87,9 @@ export default function Navigation() {
           <div className="bg-ctp-base rounded-t-xl md:rounded-xl w-full max-w-md max-h-[80vh] overflow-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-ctp-text">Quick Add Trip</h2>
+                <h2 className="text-lg font-semibold text-ctp-text">
+                  Quick Add Trip
+                </h2>
                 <button
                   onClick={() => setShowQuickAdd(false)}
                   className="p-2 text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 rounded-lg"
@@ -95,7 +97,7 @@ export default function Navigation() {
                   ×
                 </button>
               </div>
-              
+
               {/* Quick Add Form would go here */}
               <div className="space-y-4">
                 <p className="text-ctp-subtext1 text-sm">
@@ -113,11 +115,19 @@ export default function Navigation() {
         </div>
       )}
     </>
-  )
+  );
 }
 
 // Alternative floating action button for pages that need it
-export function FloatingActionButton({ onClick, icon: Icon = PlusIcon, label = "Add" }) {
+export function FloatingActionButton({
+  onClick,
+  icon: Icon = PlusIcon,
+  label = "Add",
+}: {
+  onClick: () => void;
+  icon?: React.ComponentType<{ className?: string }>;
+  label?: string;
+}) {
   return (
     <button
       onClick={onClick}
@@ -126,5 +136,5 @@ export function FloatingActionButton({ onClick, icon: Icon = PlusIcon, label = "
     >
       <Icon className="h-6 w-6" />
     </button>
-  )
+  );
 }

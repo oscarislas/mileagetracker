@@ -1,32 +1,37 @@
-import { useState, useRef, useEffect } from 'react'
-import { useClientSuggestions as useClientSuggestionsData } from './useClients'
+import { useState, useRef, useEffect } from "react";
+import { useClientSuggestions as useClientSuggestionsData } from "./useClients";
 
 export interface UseClientSuggestionsReturn {
   /** Whether suggestions are visible */
-  showSuggestions: boolean
+  showSuggestions: boolean;
   /** Show suggestions dropdown */
-  showSuggestionsDropdown: () => void
+  showSuggestionsDropdown: () => void;
   /** Hide suggestions dropdown */
-  hideSuggestionsDropdown: () => void
+  hideSuggestionsDropdown: () => void;
   /** Client suggestions data */
-  suggestions: ReturnType<typeof useClientSuggestionsData>
+  suggestions: ReturnType<typeof useClientSuggestionsData>;
   /** Ref for input element */
-  inputRef: React.RefObject<HTMLInputElement>
+  inputRef: React.RefObject<HTMLInputElement | null>;
   /** Ref for suggestions container */
-  suggestionsRef: React.RefObject<HTMLDivElement>
+  suggestionsRef: React.RefObject<HTMLDivElement | null>;
   /** Handle client selection */
-  handleClientSelect: (clientName: string, callback?: (clientName: string) => void) => void
+  handleClientSelect: (
+    clientName: string,
+    callback?: (clientName: string) => void,
+  ) => void;
 }
 
 /**
  * Reusable hook for managing client suggestions dropdown behavior
  */
-export function useClientSuggestions(searchQuery: string): UseClientSuggestionsReturn {
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const suggestionsRef = useRef<HTMLDivElement>(null)
-  
-  const suggestions = useClientSuggestionsData(searchQuery)
+export function useClientSuggestions(
+  searchQuery: string,
+): UseClientSuggestionsReturn {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  const suggestions = useClientSuggestionsData(searchQuery);
 
   // Handle click outside to close suggestions
   useEffect(() => {
@@ -36,30 +41,33 @@ export function useClientSuggestions(searchQuery: string): UseClientSuggestionsR
         !suggestionsRef.current.contains(event.target as Node) &&
         !inputRef.current?.contains(event.target as Node)
       ) {
-        setShowSuggestions(false)
+        setShowSuggestions(false);
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const showSuggestionsDropdown = () => {
     if (searchQuery.length > 0) {
-      setShowSuggestions(true)
+      setShowSuggestions(true);
     }
-  }
+  };
 
   const hideSuggestionsDropdown = () => {
-    setShowSuggestions(false)
-  }
+    setShowSuggestions(false);
+  };
 
-  const handleClientSelect = (clientName: string, callback?: (clientName: string) => void) => {
+  const handleClientSelect = (
+    clientName: string,
+    callback?: (clientName: string) => void,
+  ) => {
     if (callback) {
-      callback(clientName)
+      callback(clientName);
     }
-    setShowSuggestions(false)
-  }
+    setShowSuggestions(false);
+  };
 
   return {
     showSuggestions,
@@ -68,8 +76,8 @@ export function useClientSuggestions(searchQuery: string): UseClientSuggestionsR
     suggestions,
     inputRef,
     suggestionsRef,
-    handleClientSelect
-  }
+    handleClientSelect,
+  };
 }
 
-export default useClientSuggestions
+export default useClientSuggestions;

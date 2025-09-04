@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, ReactNode } from "react";
+import { useEffect, useRef, useCallback, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 

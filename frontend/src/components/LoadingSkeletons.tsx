@@ -25,7 +25,7 @@ export function TripItemSkeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function TripListSkeleton() {
@@ -35,7 +35,7 @@ export function TripListSkeleton() {
         <TripItemSkeleton key={i} />
       ))}
     </div>
-  )
+  );
 }
 
 export function QuickAddTripSkeleton() {
@@ -60,7 +60,7 @@ export function QuickAddTripSkeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function SummaryCardSkeleton() {
@@ -80,7 +80,7 @@ export function SummaryCardSkeleton() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 export function StatsOverviewSkeleton() {
@@ -95,7 +95,7 @@ export function StatsOverviewSkeleton() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 // Empty state component for better UX
@@ -103,12 +103,26 @@ export function TripsEmptyState() {
   return (
     <div className="text-center py-12">
       <div className="bg-ctp-blue/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-        <svg className="h-8 w-8 text-ctp-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <svg
+          className="h-8 w-8 text-ctp-blue"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
         </svg>
       </div>
-      <h3 className="text-lg font-medium text-ctp-text mb-2">No trips recorded yet</h3>
-      <p className="text-ctp-subtext1 text-sm mb-4">Start tracking your business mileage</p>
+      <h3 className="text-lg font-medium text-ctp-text mb-2">
+        No trips recorded yet
+      </h3>
+      <p className="text-ctp-subtext1 text-sm mb-4">
+        Start tracking your business mileage
+      </p>
       <div className="bg-ctp-base rounded-lg p-4 max-w-sm mx-auto border border-ctp-surface1">
         <p className="text-ctp-text font-medium mb-2">💡 Getting Started</p>
         <ul className="text-left text-sm text-ctp-subtext1 space-y-1">
@@ -118,7 +132,7 @@ export function TripsEmptyState() {
         </ul>
       </div>
     </div>
-  )
+  );
 }
 
 // Connection error state
@@ -126,12 +140,26 @@ export function ConnectionErrorState({ onRetry }: { onRetry?: () => void }) {
   return (
     <div className="text-center py-12">
       <div className="bg-ctp-red/10 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-        <svg className="h-8 w-8 text-ctp-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          className="h-8 w-8 text-ctp-red"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       </div>
-      <h3 className="text-lg font-medium text-ctp-text mb-2">Connection Error</h3>
-      <p className="text-ctp-subtext1 text-sm mb-4">Cannot connect to the server</p>
+      <h3 className="text-lg font-medium text-ctp-text mb-2">
+        Connection Error
+      </h3>
+      <p className="text-ctp-subtext1 text-sm mb-4">
+        Cannot connect to the server
+      </p>
       {onRetry && (
         <button
           onClick={onRetry}
@@ -141,5 +169,5 @@ export function ConnectionErrorState({ onRetry }: { onRetry?: () => void }) {
         </button>
       )}
     </div>
-  )
+  );
 }

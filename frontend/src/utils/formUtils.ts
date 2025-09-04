@@ -1,44 +1,50 @@
-import type { FormErrors } from '../types'
+import type { FormErrors } from "../types";
 
 /**
  * Common form validation utilities
  */
 
 export interface ClientNameValidation {
-  clientName: string
-  maxLength?: number
+  clientName: string;
+  maxLength?: number;
 }
 
 export interface MilesValidation {
-  miles: number
-  minValue?: number
+  miles: number;
+  minValue?: number;
 }
 
 export interface DateValidation {
-  date: string
+  date: string;
 }
 
 /**
  * Validates client name field
  */
-export function validateClientName({ clientName, maxLength = 30 }: ClientNameValidation): string | undefined {
+export function validateClientName({
+  clientName,
+  maxLength = 30,
+}: ClientNameValidation): string | undefined {
   if (!clientName.trim()) {
-    return 'Client name is required'
+    return "Client name is required";
   }
   if (clientName.length > maxLength) {
-    return `Client name must be ${maxLength} characters or less`
+    return `Client name must be ${maxLength} characters or less`;
   }
-  return undefined
+  return undefined;
 }
 
 /**
  * Validates miles field
  */
-export function validateMiles({ miles, minValue = 0 }: MilesValidation): string | undefined {
+export function validateMiles({
+  miles,
+  minValue = 0,
+}: MilesValidation): string | undefined {
   if (miles <= minValue) {
-    return 'Miles must be greater than 0'
+    return "Miles must be greater than 0";
   }
-  return undefined
+  return undefined;
 }
 
 /**
@@ -46,9 +52,9 @@ export function validateMiles({ miles, minValue = 0 }: MilesValidation): string 
  */
 export function validateDate({ date }: DateValidation): string | undefined {
   if (!date) {
-    return 'Trip date is required'
+    return "Trip date is required";
   }
-  return undefined
+  return undefined;
 }
 
 /**
@@ -56,38 +62,40 @@ export function validateDate({ date }: DateValidation): string | undefined {
  */
 export function validateForm<T extends Record<string, unknown>>(
   data: T,
-  validators: Record<keyof T, (value: T[keyof T]) => string | undefined>
+  validators: Record<keyof T, (value: T[keyof T]) => string | undefined>,
 ): { isValid: boolean; errors: Partial<Record<keyof T, string>> } {
-  const errors: Partial<Record<keyof T, string>> = {}
-  
-  for (const [field, validator] of Object.entries(validators) as Array<[keyof T, (value: T[keyof T]) => string | undefined]>) {
-    const error = validator(data[field])
+  const errors: Partial<Record<keyof T, string>> = {};
+
+  for (const [field, validator] of Object.entries(validators) as Array<
+    [keyof T, (value: T[keyof T]) => string | undefined]
+  >) {
+    const error = validator(data[field]);
     if (error) {
-      errors[field] = error
+      errors[field] = error;
     }
   }
-  
+
   return {
     isValid: Object.keys(errors).length === 0,
-    errors
-  }
+    errors,
+  };
 }
 
 /**
  * Trip form validation helper
  */
 export function validateTripForm(formData: {
-  client_name: string
-  trip_date: string
-  miles: number
+  client_name: string;
+  trip_date: string;
+  miles: number;
 }): { isValid: boolean; errors: FormErrors } {
   const { isValid, errors } = validateForm(formData, {
     client_name: (value) => validateClientName({ clientName: value as string }),
     trip_date: (value) => validateDate({ date: value as string }),
-    miles: (value) => validateMiles({ miles: value as number })
-  })
-  
-  return { isValid, errors: errors as FormErrors }
+    miles: (value) => validateMiles({ miles: value as number }),
+  });
+
+  return { isValid, errors: errors as FormErrors };
 }
 
 /**
@@ -95,14 +103,14 @@ export function validateTripForm(formData: {
  */
 export function debounce<T extends (...args: unknown[]) => void>(
   func: T,
-  wait: number
+  wait: number,
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout
-  
+  let timeout: NodeJS.Timeout;
+
   return (...args: Parameters<T>) => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => func(...args), wait)
-  }
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
 }
 
 /**
@@ -110,11 +118,11 @@ export function debounce<T extends (...args: unknown[]) => void>(
  */
 export function clearFieldError<T extends Record<string, string | undefined>>(
   errors: T,
-  field: keyof T
+  field: keyof T,
 ): T {
-  const newErrors = { ...errors }
-  delete newErrors[field]
-  return newErrors
+  const newErrors = { ...errors };
+  delete newErrors[field];
+  return newErrors;
 }
 
 /**
@@ -123,10 +131,10 @@ export function clearFieldError<T extends Record<string, string | undefined>>(
 export function setFieldError<T extends Record<string, string | undefined>>(
   errors: T,
   field: keyof T,
-  message: string
+  message: string,
 ): T {
   return {
     ...errors,
-    [field]: message
-  }
+    [field]: message,
+  };
 }

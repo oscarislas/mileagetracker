@@ -1,200 +1,450 @@
-# Mileage Tracker
+# 🚗 Mileage Tracker
 
-A modern mileage tracking application built with Go backend and React frontend.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Version](https://img.shields.io/badge/Go-1.23+-blue.svg)](https://golang.org)
+[![Node.js Version](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-316192.svg)](https://www.postgresql.org)
 
-## Project Structure
+A modern, full-stack mileage tracking application built for tax deduction management.
+
+## ✨ Key Features
+
+- **📝 Trip Management**: Log business trips with client names, dates, mileage, and notes
+- **💰 Expense Calculation**: Automatic calculation based on IRS-standard mileage rates
+- **📊 Monthly Summaries**: 6-month rolling summary with total miles and deductions
+- **🔍 Smart Client Search**: Autocomplete client names from previous trips
+- **⚙️ Configurable Settings**: Adjustable mileage rates for different tax years
+- **📱 Responsive Design**: Works seamlessly on desktop and mobile devices
+- **🔒 Type Safety**: Full TypeScript coverage with OpenAPI-generated client
+- **🧪 Comprehensive Testing**: Unit, integration, and E2E test coverage
+
+## 🏗️ Architecture Overview
+
+This application follows **Clean Architecture** principles with clear separation of concerns:
 
 ```
-├── backend/                 # Go backend API
-│   ├── cmd/                # Application entrypoints
-│   ├── internal/           # Private application code
-│   ├── migrations/         # Database migrations
-│   └── pkg/               # Public libraries
-├── frontend/              # React frontend
-│   ├── src/              # Source code
-│   ├── public/           # Static assets
-│   └── tests/            # Test files
-├── docker-compose.yml    # Local development orchestration
-└── Makefile             # Development commands
+┌─────────────────┐    HTTP/REST    ┌──────────────────┐
+│  React Frontend │ ◄──────────────► │   Go Backend     │
+│  (TypeScript)   │                 │   (Gin + GORM)   │
+└─────────────────┘                 └──────────────────┘
+        │                                    │
+        │ Container Network                  │ SQL Queries
+        │                                    ▼
+        └─────────────────► ┌──────────────────────────┐
+                            │    PostgreSQL 15         │
+                            │  (Persistent Storage)    │
+                            └──────────────────────────┘
 ```
 
-## Tech Stack
+### Tech Stack
 
-### Backend
-- **Go 1.22+** - Main programming language
-- **Gin** - HTTP web framework
-- **GORM** - ORM for database operations
-- **PostgreSQL** - Database
-- **OpenAPI** - API specification and code generation
-- **Zap** - Structured logging
-- **Air** - Hot reload for development
+#### Backend (Go)
+- **Framework**: [Gin](https://gin-gonic.com/) - Fast HTTP web framework
+- **ORM**: [GORM](https://gorm.io/) - Type-safe database operations
+- **Database**: PostgreSQL 15 with migrations
+- **Logging**: [Zap](https://pkg.go.dev/go.uber.org/zap) - Structured logging
+- **API**: OpenAPI 3.0 specification-driven development
+- **Development**: [Air](https://github.com/cosmtrek/air) - Live reload
 
-### Frontend
-- **React 19** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Utility-first CSS framework
-- **Catppuccin** - Color theme
-- **React Router** - Client-side routing
-- **TanStack Query** - Data fetching and caching
-- **Playwright** - End-to-end testing
+#### Frontend (React)
+- **Framework**: React 19 with TypeScript for type safety
+- **Build Tool**: [Vite](https://vitejs.dev/) - Fast development and building
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) with [Catppuccin](https://github.com/catppuccin/tailwindcss) theme
+- **State Management**: [TanStack Query](https://tanstack.com/query) for server state
+- **Routing**: React Router 7 for client-side navigation
+- **Testing**: Playwright (E2E) + Vitest (unit tests)
 
-### Infrastructure
-- **Docker** - Containerization
-- **Docker Compose** - Local development environment
-- **PostgreSQL** - Database
+#### Infrastructure
+- **Containerization**: Docker with multi-stage builds
+- **Orchestration**: Docker Compose with health checks
+- **Development**: Hot reload for both frontend and backend
+- **Database**: Persistent PostgreSQL with automated migrations
 
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Docker** and **Docker Compose**
-- **Go 1.22+** (for local development)
-- **Node.js 18+** (for local development)
-- **Make** (for using the Makefile commands)
+- **Docker & Docker Compose** (required for all setups)
+- **Go 1.23+** (optional, for local development)
+- **Node.js 18+** (optional, for local development)
+- **Make** (recommended, for easy command execution)
 
-### Quick Start with Docker
+### One-Command Setup
 
-1. **Clone the repository**
+```bash
+git clone https://github.com/your-username/mileagetracker.git
+cd mileagetracker
+make quick-start
+```
+
+This will:
+1. Build all Docker images
+2. Start all services (database, backend, frontend)
+3. Apply database migrations
+4. Start serving the application
+
+### Access Your Application
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8080
+- **Health Check**: http://localhost:8080/health
+- **API Documentation**: `backend/internal/api/openapi/openapi.yaml`
+
+## 🛠️ Development Guide
+
+### Local Development (Recommended)
+
+For the best development experience with debugging and faster iteration:
+
+1. **Start the database only**:
    ```bash
-   git clone <repository-url>
-   cd mileagetracker
+   docker-compose up db -d
    ```
 
-2. **Set up environment variables**
+2. **Run backend locally** (Terminal 1):
+   ```bash
+   make dev-backend
+   # Uses Air for hot reload
+   ```
+
+3. **Run frontend locally** (Terminal 2):
+   ```bash
+   make dev-frontend
+   # Uses Vite dev server with HMR
+   ```
+
+### Container-Only Development
+
+If you prefer everything in containers:
+
+```bash
+make up          # Start all services
+make logs        # View logs from all services
+make down        # Stop all services
+```
+
+### Environment Setup
+
+1. **Copy environment templates**:
    ```bash
    cp .env.example .env
    cp frontend/.env.example frontend/.env
    ```
 
-3. **Start all services**
-   ```bash
-   make quick-start
+2. **Adjust settings** (optional):
+   ```env
+   # .env (Backend configuration)
+   DB_NAME=mileagetracker
+   DB_USER=postgres
+   DB_PASSWORD=postgres
+   SERVER_PORT=8080
+   LOG_LEVEL=debug
+   
+   # frontend/.env (Frontend configuration)
+   VITE_API_URL=http://localhost:8080
    ```
 
-4. **View the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8080
-   - API Health: http://localhost:8080/health
+## 📋 Available Commands
 
-### Local Development
+### Quick Reference
+```bash
+make help                    # Show all available commands
+make setup                   # Initial project setup
+make quick-start             # Build and start everything
+```
 
-For development with hot reload and debugging:
+### Development Workflow
+```bash
+# Service management
+make up                      # Start all services
+make down                    # Stop all services
+make restart                 # Restart all services
+make logs                    # View logs from all services
 
-1. **Start the database**
-   ```bash
-   docker-compose up db -d
-   ```
+# Local development
+make dev-backend             # Run backend locally (hot reload)
+make dev-frontend            # Run frontend locally (HMR)
 
-2. **Run backend locally**
-   ```bash
-   make dev-backend
-   # or manually:
-   cd backend && go run cmd/server/main.go
-   ```
+# Testing
+make test                    # Run all tests
+make test-backend            # Go tests only
+make test-frontend           # React tests only  
+make test-e2e                # Playwright E2E tests
+make test-coverage           # All tests with coverage reports
 
-3. **Run frontend locally**
-   ```bash
-   make dev-frontend
-   # or manually:
-   cd frontend && npm run dev
-   ```
+# Code quality
+make lint                    # Lint all projects
+make format                  # Format all code
+make lint-backend            # golangci-lint
+make lint-frontend           # ESLint + TypeScript
 
-## Available Commands
+# Database operations
+make migrate-up              # Apply migrations
+make migrate-down            # Rollback migrations
+make migrate-create NAME=... # Create new migration
+make db-reset                # Drop, recreate, and migrate
 
-### General
-- `make help` - Show all available commands
-- `make setup` - Initial project setup
-- `make clean` - Clean up containers and volumes
+# Health and monitoring
+make health                  # Check service health
+```
 
-### Development
-- `make up` - Start all services
-- `make down` - Stop all services
-- `make logs` - View logs from all services
-- `make dev-backend` - Run backend locally
-- `make dev-frontend` - Run frontend locally
+## 🔗 API Reference
 
-### Testing
-- `make test` - Run all tests
-- `make test-backend` - Run backend tests
-- `make test-frontend` - Run frontend tests
-- `make test-e2e` - Run end-to-end tests
+### Core Endpoints
 
-### Code Quality
-- `make lint` - Run linting for all projects
-- `make format` - Format all code
+| Method | Endpoint | Description | Example |
+|--------|----------|-------------|---------|
+| `GET` | `/health` | Service health check | Returns service status |
+| `GET` | `/ready` | Readiness check | Returns service + DB status |
+| `POST` | `/api/v1/trips` | Create new trip | Create trip with client/mileage |
+| `GET` | `/api/v1/trips` | List trips (paginated) | `?page=1&limit=10` |
+| `GET` | `/api/v1/trips/{id}` | Get specific trip | Returns full trip details |
+| `PUT` | `/api/v1/trips/{id}` | Update trip | Modify existing trip |
+| `DELETE` | `/api/v1/trips/{id}` | Delete trip | Remove trip permanently |
+| `GET` | `/api/v1/trips/summary` | Monthly summary | 6-month expense summary |
+| `GET` | `/api/v1/clients` | Client suggestions | Autocomplete client names |
+| `GET` | `/api/v1/settings` | Get mileage rate | Current IRS rate setting |
+| `PUT` | `/api/v1/settings` | Update rate | Set new mileage rate |
 
-### Database
-- `make migrate-up` - Run database migrations
-- `make migrate-down` - Rollback migrations
-- `make db-reset` - Reset database
+### API Examples
 
-## API Documentation
+**Create a new trip**:
+```bash
+curl -X POST http://localhost:8080/api/v1/trips \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_name": "Acme Corp",
+    "trip_date": "2024-01-15",
+    "miles": 125.5,
+    "notes": "Client meeting downtown"
+  }'
+```
 
-The API is documented using OpenAPI 3.0. When the backend is running:
+**Get trips with pagination**:
+```bash
+curl "http://localhost:8080/api/v1/trips?page=1&limit=5"
+```
 
-- **OpenAPI Spec**: `backend/internal/api/openapi/openapi.yaml`
-- **Health Check**: GET `/health`
-- **Readiness Check**: GET `/ready`
-- **API Routes**: `/api/v1/*`
+**Get expense summary**:
+```bash
+curl "http://localhost:8080/api/v1/trips/summary"
+```
 
-## Development Workflow
+**Response format**:
+```json
+{
+  "months": [
+    {
+      "month": "January 2024",
+      "year": 2024,
+      "month_num": 1,
+      "total_miles": 145.50,
+      "amount": 97.49
+    }
+  ]
+}
+```
 
-1. **Feature Development**
-   - Create feature branch
-   - Implement backend API changes
-   - Update OpenAPI specification
-   - Implement frontend changes
-   - Write tests
-   - Run quality checks: `make lint test`
+## 🧪 Testing Strategy
 
-2. **Database Changes**
-   - Create migration: `make migrate-create NAME=feature_name`
-   - Apply migration: `make migrate-up`
-   - Update domain models if needed
+### Test Coverage Goals
+- **Backend**: >90% coverage for business logic
+- **Frontend**: >85% coverage for components and hooks
+- **E2E**: Critical user workflows covered
 
-3. **Testing**
-   - Unit tests for both backend and frontend
-   - Integration tests for API endpoints
-   - E2E tests for user workflows
+### Running Tests
 
-## Environment Variables
+```bash
+# Run specific test suites
+make test-backend           # Go unit tests
+make test-frontend          # React component tests
+make test-e2e              # Full user workflow tests
 
-### Backend (.env)
+# Coverage reports
+make test-coverage         # Generate HTML coverage reports
+# Reports saved to coverage/ directory
+```
+
+### Test Organization
+
+```
+backend/
+├── internal/service/*_test.go    # Business logic tests
+├── internal/repository/*_test.go  # Data layer tests
+└── internal/api/*_test.go        # HTTP handler tests
+
+frontend/
+├── src/components/**/*.test.tsx   # Component tests
+├── src/hooks/**/*.test.ts         # Custom hook tests
+└── tests/e2e/                    # Playwright E2E tests
+```
+
+## 🗄️ Database Schema
+
+### Core Tables
+
+```sql
+-- Trips table (main entity)
+CREATE TABLE trips (
+    id SERIAL PRIMARY KEY,
+    client_id INTEGER REFERENCES clients(id),
+    client_name VARCHAR(30) NOT NULL,
+    trip_date DATE NOT NULL,
+    miles DECIMAL(10,2) NOT NULL CHECK (miles >= 0),
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Clients table (for autocomplete)
+CREATE TABLE clients (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(30) UNIQUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Settings table (application configuration)
+CREATE TABLE settings (
+    id SERIAL PRIMARY KEY,
+    mileage_rate DECIMAL(5,3) NOT NULL DEFAULT 0.67,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### Migrations
+
+Database migrations are managed through Go:
+
+```bash
+# Create new migration
+make migrate-create NAME=add_new_feature
+
+# Apply migrations (up)
+make migrate-up
+
+# Rollback migrations (down)  
+make migrate-down
+
+# Reset database completely
+make db-reset
+```
+
+Migration files are located in `backend/migrations/`:
+- `001_initial.up.sql` / `001_initial.down.sql`
+- `002_add_clients.up.sql` / `002_add_clients.down.sql`
+
+## 🔧 Configuration
+
+### Backend Configuration (.env)
 ```env
+# Database
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
 DB_NAME=mileagetracker
+DB_SSLMODE=disable
+
+# Server
 SERVER_PORT=8080
 GIN_MODE=debug
 LOG_LEVEL=debug
+
+# Features
+CORS_ALLOW_ORIGIN=http://localhost:3000
 ```
 
-### Frontend (frontend/.env)
+### Frontend Configuration (frontend/.env)
 ```env
+# API Configuration
 VITE_API_URL=http://localhost:8080
+
+# Development
+VITE_LOG_LEVEL=debug
 ```
 
-## VS Code Setup
 
-Recommended extensions are configured in `.vscode/extensions.json`. The workspace includes:
+## 🚢 Production Deployment
 
-- Go language support with debugging
-- TypeScript and React development
-- Tailwind CSS IntelliSense
-- ESLint and Prettier integration
-- Docker and Docker Compose support
+### Docker Production Build
 
-## Contributing
+```bash
+# Build production images
+docker-compose -f docker-compose.prod.yml build
 
-1. Follow the existing code style and conventions
-2. Write tests for new features
-3. Update documentation as needed
-4. Ensure all quality checks pass: `make lint test`
-5. Use conventional commit messages
+# Start production services
+docker-compose -f docker-compose.prod.yml up -d
+```
 
-## License
+### Environment Variables for Production
+```env
+# Backend
+GIN_MODE=release
+LOG_LEVEL=info
+DB_SSLMODE=require
+CORS_ALLOW_ORIGIN=https://yourdomain.com
 
-[Add your license here]
+# Database
+DB_HOST=your-postgres-host
+DB_PASSWORD=secure-random-password
+```
+
+### Health Monitoring
+The application provides health check endpoints suitable for load balancers:
+
+- **Liveness probe**: `GET /health` (returns 200 if service is running)
+- **Readiness probe**: `GET /ready` (returns 200 if service and DB are healthy)
+
+## 🤝 Contributing
+
+### Development Workflow
+
+1. **Fork and clone** the repository
+2. **Create a feature branch**: `git checkout -b feature/awesome-feature`
+3. **Set up development environment**: `make setup`
+4. **Start development services**: `make dev-backend` and `make dev-frontend`
+5. **Make your changes** following existing patterns
+6. **Write/update tests** for new functionality
+7. **Run quality checks**: `make lint test`
+8. **Commit with conventional format**: `git commit -m "feat: add awesome feature"`
+9. **Push and create pull request**
+
+### Commit Message Format
+
+Follow the [50/72 rule](https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html) and imperative mood:
+
+```bash
+# Good examples:
+git commit -m "feat: add client search functionality"
+git commit -m "fix: resolve mileage calculation rounding error"
+git commit -m "docs: update API examples in README"
+
+# Bad examples:
+git commit -m "Added search"  # Past tense
+git commit -m "Fix bug"       # Too vague
+git commit -m "This commit adds a new feature for client search that allows users to find clients quickly"  # Too long
+```
+
+### Code Style Guidelines
+
+- **Go**: Follow `gofmt` and `golangci-lint` rules
+- **TypeScript**: Use strict TypeScript, prefer type guards over type assertions
+- **React**: Use functional components with hooks, avoid `any` types
+- **Testing**: Write tests for new features, aim for high coverage
+- **Documentation**: Update relevant docs for new features
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Gin Web Framework](https://gin-gonic.com/) for the fast HTTP server
+- [GORM](https://gorm.io/) for elegant database operations
+- [TanStack Query](https://tanstack.com/query) for excellent data fetching
+- [Tailwind CSS](https://tailwindcss.com/) for utility-first styling
+- [Catppuccin](https://catppuccin.com/) for the beautiful color palette
+
+---
+
+**Happy tracking! 🚗💼**

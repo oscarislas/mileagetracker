@@ -17,3 +17,16 @@ export default renderWithProviders;
 // eslint-disable-next-line react-refresh/only-export-components
 export * from "@testing-library/react";
 export { userEvent } from "@testing-library/user-event";
+
+// Re-export specific utilities to avoid conflicts
+export {
+  FIXTURE_BASE_TRIP,
+  FIXTURE_VALID_FORM_DATA,
+  createTripFixture,
+  createFormDataFixture,
+} from "./fixtures";
+export {
+  createTestQueryClient as createTestQueryClientUtil,
+  setupStandardTest as setupTest,
+} from "./setupUtils";
+export { debugFormState, debugDOM } from "./debugHelpers";

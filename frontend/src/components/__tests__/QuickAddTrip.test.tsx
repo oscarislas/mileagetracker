@@ -188,7 +188,7 @@ describe("QuickAddTrip", () => {
     await user.type(screen.getByLabelText(/who did you visit/i), "Test Client");
     await user.click(screen.getByRole("button", { name: /next/i }));
 
-    const addTripButton = screen.getByRole("button", { name: /add trip/i });
+    const addTripButton = screen.getByRole("button", { name: /adding trip/i });
     expect(addTripButton).toBeDisabled();
     expect(addTripButton.querySelector(".animate-spin")).toBeInTheDocument();
   });

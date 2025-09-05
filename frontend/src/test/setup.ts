@@ -30,7 +30,16 @@ vi.mock("axios", async () => {
     ...actual,
     default: {
       create: () => ({
-        get: vi.fn(() => Promise.resolve({ data: {}, status: 200 })),
+        get: vi.fn((url: string) => {
+          // Mock client suggestions endpoint
+          if (url.includes("/api/v1/clients")) {
+            return Promise.resolve({
+              data: { clients: [] },
+              status: 200,
+            });
+          }
+          return Promise.resolve({ data: {}, status: 200 });
+        }),
         post: vi.fn(() => Promise.resolve({ data: {}, status: 201 })),
         put: vi.fn(() => Promise.resolve({ data: {}, status: 200 })),
         delete: vi.fn(() => Promise.resolve({ data: {}, status: 200 })),
@@ -52,3 +61,5 @@ Object.defineProperty(window, "confirm", {
   writable: true,
   value: vi.fn(() => true),
 });
+
+// Note: Hook mocking moved to individual test files to avoid global conflicts

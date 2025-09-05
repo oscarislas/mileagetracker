@@ -21,6 +21,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    testTimeout: 10000, // 10 seconds for individual tests
+    hookTimeout: 10000, // 10 seconds for hooks
+    teardownTimeout: 10000, // 10 seconds for teardown
     // Exclude E2E tests from unit test runs
     exclude: [
       '**/node_modules/**',

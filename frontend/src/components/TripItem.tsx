@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useDeleteTrip } from "../hooks/useTrips";
 import { formatTripDateRelative } from "../utils/dateUtils";
+import { LoadingSpinner } from "./ui";
 import TripDetailModal from "./TripDetailModal";
 import type { Trip } from "../types";
 
@@ -53,7 +54,7 @@ export default function TripItem({ trip, showActions = true }: TripItemProps) {
                 className="bg-ctp-red hover:bg-ctp-red/90 disabled:bg-ctp-red/50 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2"
               >
                 {deleteTripMutation.isPending && (
-                  <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                  <LoadingSpinner size="sm" color="white" />
                 )}
                 Delete
               </button>

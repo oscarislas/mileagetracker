@@ -7,6 +7,10 @@ export interface UseFormOptions<T> {
   validate?: (data: T) => Record<keyof T, string | undefined>;
   /** Success callback */
   onSubmit?: (data: T) => void | Promise<void>;
+  /** Reset form after successful submission */
+  resetOnSuccess?: boolean;
+  /** Transform data before submission */
+  transformBeforeSubmit?: (data: T) => T;
 }
 
 export interface UseFormReturn<T> {
@@ -16,6 +20,10 @@ export interface UseFormReturn<T> {
   errors: Partial<Record<keyof T, string>>;
   /** Whether form is submitting */
   isSubmitting: boolean;
+  /** Whether form has been submitted */
+  isSubmitted: boolean;
+  /** Whether form is valid (only available after validation) */
+  isValid: boolean;
   /** Update a field value */
   setField: (field: keyof T, value: T[keyof T]) => void;
   /** Update multiple fields */
@@ -34,6 +42,12 @@ export interface UseFormReturn<T> {
   handleSubmit: (e?: React.FormEvent) => Promise<boolean>;
   /** Check if form has changes */
   isDirty: boolean;
+  /** Get field error helper */
+  getFieldError: (field: keyof T) => string | undefined;
+  /** Check if field has error */
+  hasFieldError: (field: keyof T) => boolean;
+  /** Handle field change with automatic error clearing */
+  handleFieldChange: (field: keyof T, value: T[keyof T]) => void;
 }
 
 /**
@@ -43,10 +57,14 @@ export function useForm<T extends Record<string, unknown>>({
   initialData,
   validate,
   onSubmit,
+  resetOnSuccess = true,
+  transformBeforeSubmit,
 }: UseFormOptions<T>): UseFormReturn<T> {
   const [data, setDataState] = useState<T>(initialData);
   const [errors, setErrors] = useState<Partial<Record<keyof T, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isValid, setIsValid] = useState(true);
 
   const setField = useCallback(
     (field: keyof T, value: T[keyof T]) => {
@@ -87,10 +105,15 @@ export function useForm<T extends Record<string, unknown>>({
     setDataState(initialData);
     setErrors({});
     setIsSubmitting(false);
+    setIsSubmitted(false);
+    setIsValid(true);
   }, [initialData]);
 
   const validateForm = useCallback((): boolean => {
-    if (!validate) return true;
+    if (!validate) {
+      setIsValid(true);
+      return true;
+    }
 
     const validationErrors = validate(data);
     const filteredErrors = Object.entries(validationErrors)
@@ -104,7 +127,9 @@ export function useForm<T extends Record<string, unknown>>({
       );
 
     setErrors(filteredErrors);
-    return Object.keys(filteredErrors).length === 0;
+    const isFormValid = Object.keys(filteredErrors).length === 0;
+    setIsValid(isFormValid);
+    return isFormValid;
   }, [data, validate]);
 
   const handleSubmit = useCallback(
@@ -113,6 +138,7 @@ export function useForm<T extends Record<string, unknown>>({
         e.preventDefault();
       }
 
+      setIsSubmitted(true);
       if (!validateForm()) {
         return false;
       }
@@ -123,7 +149,13 @@ export function useForm<T extends Record<string, unknown>>({
 
       setIsSubmitting(true);
       try {
-        await onSubmit(data);
+        const submitData = transformBeforeSubmit
+          ? transformBeforeSubmit(data)
+          : data;
+        await onSubmit(submitData);
+        if (resetOnSuccess) {
+          reset();
+        }
         return true;
       } catch (error) {
         console.error("Form submission error:", error);
@@ -132,17 +164,47 @@ export function useForm<T extends Record<string, unknown>>({
         setIsSubmitting(false);
       }
     },
-    [data, validateForm, onSubmit],
+    [
+      data,
+      validateForm,
+      onSubmit,
+      transformBeforeSubmit,
+      resetOnSuccess,
+      reset,
+    ],
   );
 
   const isDirty = useCallback(() => {
     return JSON.stringify(data) !== JSON.stringify(initialData);
   }, [data, initialData])();
 
+  const getFieldError = useCallback(
+    (field: keyof T): string | undefined => {
+      return errors[field];
+    },
+    [errors],
+  );
+
+  const hasFieldError = useCallback(
+    (field: keyof T): boolean => {
+      return !!errors[field];
+    },
+    [errors],
+  );
+
+  const handleFieldChange = useCallback(
+    (field: keyof T, value: T[keyof T]) => {
+      setField(field, value);
+    },
+    [setField],
+  );
+
   return {
     data,
     errors,
     isSubmitting,
+    isSubmitted,
+    isValid,
     setField,
     setData,
     setErrors,
@@ -152,6 +214,9 @@ export function useForm<T extends Record<string, unknown>>({
     validateForm,
     handleSubmit,
     isDirty,
+    getFieldError,
+    hasFieldError,
+    handleFieldChange,
   };
 }
 

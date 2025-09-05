@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { UserIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { cn } from "../../utils/classUtils";
+import { LoadingSpinner } from "./LoadingSpinner";
 import type { Client } from "../../types";
 
 interface ClientSuggestionsProps {
@@ -45,9 +46,8 @@ export const ClientSuggestions = forwardRef<
     },
     ref,
   ) => {
-    if (!show) {
-      return null;
-    }
+    // Early return if not showing
+    if (!show) return null;
 
     const displayedClients = clients.slice(0, maxItems);
 
@@ -75,6 +75,7 @@ export const ClientSuggestions = forwardRef<
     return (
       <div
         ref={ref}
+        id="client-suggestions"
         className={cn(
           "absolute z-50 w-full",
           positionUp ? "bottom-full mb-2" : "top-full mt-2",
@@ -98,7 +99,7 @@ export const ClientSuggestions = forwardRef<
       >
         {isLoading ? (
           <div className="flex items-center gap-3 px-4 py-3">
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-ctp-blue border-t-transparent" />
+            <LoadingSpinner size="sm" color="blue" />
             <span className="text-ctp-subtext1 text-sm">
               Searching clients...
             </span>

@@ -10,14 +10,14 @@ export interface Trip {
   updated_at: string;
 }
 
-export interface CreateTripRequest {
+export interface CreateTripRequest extends Record<string, unknown> {
   client_name: string;
   trip_date: string; // YYYY-MM-DD
   miles: number;
   notes: string;
 }
 
-export interface UpdateTripRequest {
+export interface UpdateTripRequest extends Record<string, unknown> {
   client_name: string;
   trip_date: string; // YYYY-MM-DD
   miles: number;
@@ -95,4 +95,39 @@ export interface TripsQueryParams {
 // UI Types
 export interface FormErrors {
   [key: string]: string;
+}
+
+// Enhanced Form Types
+export interface TripFormData extends Record<string, unknown> {
+  client_name: string;
+  trip_date: string;
+  miles: number;
+  notes: string;
+}
+
+export interface TripFormErrors {
+  client_name?: string;
+  trip_date?: string;
+  miles?: string;
+  notes?: string;
+}
+
+// Form field configurations
+export interface FormFieldConfig {
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  helperText?: string;
+  maxLength?: number;
+  type?: "text" | "number" | "date" | "textarea";
+  step?: string;
+  min?: string;
+  inputMode?: string;
+}
+
+export interface TripFormFieldConfigs {
+  client_name: FormFieldConfig;
+  trip_date: FormFieldConfig;
+  miles: FormFieldConfig;
+  notes: FormFieldConfig;
 }

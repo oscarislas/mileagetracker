@@ -4,6 +4,48 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import TripDetailModal from "../TripDetailModal";
 import type { Trip } from "../../types";
 
+// Mock the hooks that might cause infinite loops
+vi.mock("../../hooks/useTrips", () => ({
+  useUpdateTrip: vi.fn(() => ({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    isLoading: false,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    error: null,
+    data: undefined,
+    reset: vi.fn(),
+  })),
+  useDeleteTrip: vi.fn(() => ({
+    mutate: vi.fn(),
+    mutateAsync: vi.fn(),
+    isLoading: false,
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+    error: null,
+    data: undefined,
+    reset: vi.fn(),
+  })),
+}));
+
+vi.mock("../../hooks/useClientSuggestions", () => ({
+  useClientSuggestions: vi.fn(() => ({
+    showSuggestions: false,
+    showSuggestionsDropdown: vi.fn(),
+    hideSuggestionsDropdown: vi.fn(),
+    suggestions: {
+      data: { clients: [] },
+      isLoading: false,
+      isError: false,
+    },
+    inputRef: { current: null },
+    suggestionsRef: { current: null },
+    handleClientSelect: vi.fn(),
+  })),
+}));
+
 const mockTrip: Trip = {
   id: 1,
   client_name: "Test Client",
@@ -37,6 +79,7 @@ describe("TripDetailModal", () => {
   const mockOnClose = vi.fn();
 
   beforeEach(() => {
+    vi.clearAllMocks();
     mockOnClose.mockClear();
   });
 

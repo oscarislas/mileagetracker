@@ -19,3 +19,6 @@ export { default as ConnectionStatus } from "./ConnectionStatus";
 export { default as EmptyState } from "./EmptyState";
 
 export { default as ErrorState } from "./ErrorState";
+
+export { default as LoadingSpinner } from "./LoadingSpinner";
+export type { LoadingSpinnerProps } from "./LoadingSpinner";

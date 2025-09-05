@@ -72,7 +72,7 @@ This application follows **Clean Architecture** principles with clear separation
 ### One-Command Setup
 
 ```bash
-git clone https://github.com/your-username/mileagetracker.git
+git clone https://github.com/oscarislas/mileagetracker.git
 cd mileagetracker
 make quick-start
 ```

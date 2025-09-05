@@ -6,6 +6,10 @@ import TripsList from "../components/TripsList";
 import { useAllClients } from "../hooks/useClients";
 import { useSummary } from "../hooks/useSummary";
 import { useTrips } from "../hooks/useTrips";
+import {
+  createSearchInputClasses,
+  createSelectClasses,
+} from "../utils/styleUtils";
 import type { DateRangeFilter, MilesRangeFilter, TripFilters } from "../types";
 
 export default function TripsPage() {
@@ -100,7 +104,7 @@ export default function TripsPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-ctp-surface1 rounded-lg bg-ctp-surface0 text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
+              className={createSearchInputClasses()}
               placeholder="Search trips, clients..."
             />
           </div>
@@ -138,7 +142,7 @@ export default function TripsPage() {
                     dateRange: e.target.value as DateRangeFilter,
                   }))
                 }
-                className="w-full px-3 py-2 text-sm border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
+                className={createSelectClasses()}
               >
                 <option value="">All dates</option>
                 <option value="today">Today</option>
@@ -164,7 +168,7 @@ export default function TripsPage() {
                     clientFilter: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 text-sm border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
+                className={createSelectClasses()}
               >
                 <option value="">All clients</option>
                 {clientsData?.clients.map((client) => (
@@ -191,7 +195,7 @@ export default function TripsPage() {
                     milesRange: e.target.value as MilesRangeFilter,
                   }))
                 }
-                className="w-full px-3 py-2 text-sm border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
+                className={createSelectClasses()}
               >
                 <option value="">Any distance</option>
                 <option value="0-10">0-10 miles</option>

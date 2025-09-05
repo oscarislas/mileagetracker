@@ -152,6 +152,7 @@ tmp/
 
 # Claude Code configuration
 CLAUDE.md
+.claude/
 
 # Playwright test results
 test-results/

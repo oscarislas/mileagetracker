@@ -1,93 +1,40 @@
 import { useState } from "react";
-import {
-  PlusIcon,
-  UserIcon,
-  CalendarIcon,
-  TruckIcon,
-  DocumentTextIcon,
-} from "@heroicons/react/24/outline";
+import { PlusIcon } from "@heroicons/react/24/outline";
 import { useCreateTrip } from "../hooks/useTrips";
-import { useClientSuggestions as useClientSuggestionsHook } from "../hooks/useClientSuggestions";
+import { useForm } from "../hooks/useForm";
 import { getApiErrorMessage } from "../utils/errorUtils";
-import { validateTripForm } from "../utils/formUtils";
 import {
-  Button,
-  Input,
-  FormField,
-  ClientSuggestions,
-  Textarea,
-  ConnectionStatus,
-} from "./ui";
-import type { CreateTripRequest, FormErrors } from "../types";
+  createTripFormValidator,
+  getInitialTripFormData,
+} from "../utils/formUtils";
+import { Button, ConnectionStatus } from "./ui";
+import { ClientNameField, DateField, MilesField, NotesField } from "./form";
+import type { CreateTripRequest } from "../types";
 
 export default function AddTripForm() {
-  const [formData, setFormData] = useState<CreateTripRequest>({
-    client_name: "",
-    trip_date: "", // Empty by default to encourage user selection
-    miles: 0,
-    notes: "",
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
   const [isCollapsed, setIsCollapsed] = useState(false);
-
   const createTripMutation = useCreateTrip();
-  const clientSuggestions = useClientSuggestionsHook(formData.client_name);
 
-  const validateForm = (): boolean => {
-    const { isValid, errors: validationErrors } = validateTripForm(formData);
-    setErrors(validationErrors);
-    return isValid;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    createTripMutation.mutate(formData, {
-      onSuccess: () => {
-        setFormData({
-          client_name: "",
-          trip_date: "", // Empty to encourage date selection for next trip
-          miles: 0,
-          notes: "",
+  const form = useForm<CreateTripRequest>({
+    initialData: getInitialTripFormData(),
+    validate: createTripFormValidator<CreateTripRequest>(),
+    onSubmit: async (data) => {
+      return new Promise((resolve, reject) => {
+        createTripMutation.mutate(data, {
+          onSuccess: () => {
+            setIsCollapsed(true);
+            // Auto-expand after successful submission for better UX
+            setTimeout(() => setIsCollapsed(false), 2000);
+            resolve();
+          },
+          onError: (error) => {
+            reject(error);
+          },
         });
-        setErrors({});
-        setIsCollapsed(true);
-        // Auto-expand after successful submission for better UX
-        setTimeout(() => setIsCollapsed(false), 2000);
-      },
-    });
-  };
-
-  const handleClientSelect = (clientName: string) => {
-    setFormData({ ...formData, client_name: clientName });
-    clientSuggestions.handleClientSelect(clientName);
-  };
-
-  const handleClientNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setFormData({ ...formData, client_name: value });
-    if (value.length > 0) {
-      clientSuggestions.showSuggestionsDropdown();
-    } else {
-      clientSuggestions.hideSuggestionsDropdown();
-    }
-    // Clear error when user starts typing
-    if (errors.client_name) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors.client_name;
-        return newErrors;
       });
-    }
-  };
-
-  const handleClientNameFocus = () => {
-    if (formData.client_name.length > 0) {
-      clientSuggestions.showSuggestionsDropdown();
-    }
-  };
+    },
+    resetOnSuccess: true,
+  });
 
   if (isCollapsed) {
     return (
@@ -121,120 +68,24 @@ export default function AddTripForm() {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Client Name */}
-        <FormField
-          label="Client Name"
-          error={errors.client_name}
-          icon={UserIcon}
-          id="client_name"
-        >
-          <div className="relative">
-            <Input
-              ref={clientSuggestions.inputRef}
-              id="client_name"
-              maxLength={30}
-              value={formData.client_name}
-              onChange={handleClientNameChange}
-              onFocus={handleClientNameFocus}
-              hasIcon
-              error={!!errors.client_name}
-              placeholder="Enter client name"
-            />
+      <form onSubmit={form.handleSubmit} className="space-y-4">
+        <ClientNameField form={form} fieldName="client_name" required />
 
-            {/* Client Suggestions */}
-            <ClientSuggestions
-              ref={clientSuggestions.suggestionsRef}
-              clients={clientSuggestions.suggestions?.data?.clients || []}
-              show={clientSuggestions.showSuggestions}
-              onSelect={handleClientSelect}
-              isLoading={clientSuggestions.suggestions?.isLoading}
-              query={formData.client_name}
-              noResultsMessage="No matching clients found"
-            />
-          </div>
-        </FormField>
-
-        {/* Trip Date */}
-        <FormField
+        <DateField
+          form={form}
+          fieldName="trip_date"
           label="Trip Date"
           required
-          error={errors.trip_date}
           helperText={
-            !formData.trip_date && !errors.trip_date
+            !form.data.trip_date && !form.getFieldError("trip_date")
               ? "💡 Select the date when your trip occurred"
               : undefined
           }
-          icon={CalendarIcon}
-          id="trip_date"
-        >
-          <Input
-            type="date"
-            id="trip_date"
-            value={formData.trip_date}
-            onChange={(e) => {
-              setFormData({ ...formData, trip_date: e.target.value });
-              if (errors.trip_date) {
-                setErrors((prev) => {
-                  const newErrors = { ...prev };
-                  delete newErrors.trip_date;
-                  return newErrors;
-                });
-              }
-            }}
-            hasIcon
-            error={!!errors.trip_date}
-            placeholder="Select trip date"
-          />
-        </FormField>
+        />
 
-        {/* Miles */}
-        <FormField
-          label="Miles Driven"
-          error={errors.miles}
-          icon={TruckIcon}
-          id="miles"
-        >
-          <Input
-            type="number"
-            id="miles"
-            step="0.1"
-            min="0"
-            inputMode="decimal"
-            value={formData.miles || ""}
-            onChange={(e) => {
-              setFormData({
-                ...formData,
-                miles: parseFloat(e.target.value) || 0,
-              });
-              if (errors.miles) {
-                setErrors((prev) => {
-                  const newErrors = { ...prev };
-                  delete newErrors.miles;
-                  return newErrors;
-                });
-              }
-            }}
-            hasIcon
-            error={!!errors.miles}
-            placeholder="0.0"
-          />
-        </FormField>
+        <MilesField form={form} fieldName="miles" />
 
-        {/* Notes */}
-        <FormField label="Notes (Optional)" icon={DocumentTextIcon} id="notes">
-          <Textarea
-            id="notes"
-            rows={3}
-            value={formData.notes}
-            onChange={(e) =>
-              setFormData({ ...formData, notes: e.target.value })
-            }
-            hasIcon
-            noResize
-            placeholder="Trip details, purpose, etc."
-          />
-        </FormField>
+        <NotesField form={form} fieldName="notes" />
 
         {/* Error Display */}
         {createTripMutation.isError && (
@@ -247,11 +98,17 @@ export default function AddTripForm() {
 
         <Button
           type="submit"
-          loading={createTripMutation.isPending}
-          icon={!createTripMutation.isPending ? PlusIcon : undefined}
+          loading={form.isSubmitting || createTripMutation.isPending}
+          icon={
+            !(form.isSubmitting || createTripMutation.isPending)
+              ? PlusIcon
+              : undefined
+          }
           fullWidth
         >
-          {createTripMutation.isPending ? "Adding Trip..." : "Add Trip"}
+          {form.isSubmitting || createTripMutation.isPending
+            ? "Adding Trip..."
+            : "Add Trip"}
         </Button>
       </form>
     </div>

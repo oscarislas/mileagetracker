@@ -1,10 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { PlusIcon, UserIcon, TruckIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, UserIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { useCreateTrip } from "../hooks/useTrips";
-import { useClientSuggestions } from "../hooks/useClients";
+import { useForm } from "../hooks/useForm";
+import {
+  createTripFormValidator,
+  getInitialTripFormData,
+} from "../utils/formUtils";
 import { getTodayDateString } from "../utils/dateUtils";
-import { ClientSuggestions } from "./ui";
+import { getApiErrorMessage } from "../utils/errorUtils";
+import { ClientNameField, DateField, MilesField, NotesField } from "./form";
+import { Button } from "./ui";
 import type { CreateTripRequest } from "../types";
 
 export interface QuickAddTripFormProps {
@@ -27,22 +33,43 @@ export default function QuickAddTripForm({
   const [step, setStep] = useState<FormStep>(
     showCollapseState ? "collapsed" : "client",
   );
-  const [formData, setFormData] = useState<CreateTripRequest>({
-    client_name: "",
-    trip_date: getTodayDateString(),
-    miles: 0,
-    notes: "",
-  });
-  const [showClientSuggestions, setShowClientSuggestions] = useState(false);
 
   const clientInputRef = useRef<HTMLInputElement>(null);
   const milesInputRef = useRef<HTMLInputElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const createTripMutation = useCreateTrip();
-  const { data: clientSuggestions } = useClientSuggestions(
-    formData.client_name,
-  );
+
+  // Initialize form with default data including today's date
+  const form = useForm<CreateTripRequest>({
+    initialData: {
+      ...getInitialTripFormData(),
+      trip_date: getTodayDateString(), // QuickAdd defaults to today
+    },
+    validate: createTripFormValidator<CreateTripRequest>(),
+    onSubmit: async (data) => {
+      return new Promise((resolve, reject) => {
+        createTripMutation.mutate(data, {
+          onSuccess: () => {
+            setStep("success");
+            // Handle success flow based on mode
+            setTimeout(() => {
+              if (mode === "modal") {
+                onSuccess?.();
+              } else {
+                setStep(showCollapseState ? "collapsed" : "client");
+                form.reset();
+              }
+            }, 2000);
+            resolve();
+          },
+          onError: (error) => {
+            reject(error);
+          },
+        });
+      });
+    },
+    resetOnSuccess: false, // We handle reset manually for the step flow
+  });
 
   // Focus management for modal mode
   useEffect(() => {
@@ -52,74 +79,15 @@ export default function QuickAddTripForm({
   }, [mode, step]);
 
   const handleClientSubmit = (clientName: string) => {
-    setFormData({ ...formData, client_name: clientName });
-    setShowClientSuggestions(false);
+    form.setField("client_name", clientName);
     setStep("details");
     setTimeout(() => milesInputRef.current?.focus(), 100);
   };
 
-  const handleClientSelect = (clientName: string) => {
-    handleClientSubmit(clientName);
-  };
-
-  const handleClientNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setFormData({ ...formData, client_name: value });
-    setShowClientSuggestions(value.length > 0);
-  };
-
-  const handleClientNameFocus = () => {
-    if (formData.client_name.length > 0) {
-      setShowClientSuggestions(true);
+  const handleSubmit = async () => {
+    if (form.data.miles > 0) {
+      await form.handleSubmit();
     }
-  };
-
-  // Click outside to close suggestions
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target as Node) &&
-        clientInputRef.current &&
-        !clientInputRef.current.contains(event.target as Node)
-      ) {
-        setShowClientSuggestions(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const handleSubmit = () => {
-    if (formData.miles > 0) {
-      createTripMutation.mutate(formData, {
-        onSuccess: () => {
-          setStep("success");
-          setTimeout(() => {
-            if (mode === "modal") {
-              // Call onSuccess callback and let parent handle closing
-              onSuccess?.();
-            } else {
-              // Inline mode: reset to collapsed state
-              setStep(showCollapseState ? "collapsed" : "client");
-              resetForm();
-            }
-          }, 2000);
-        },
-      });
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      client_name: "",
-      trip_date: getTodayDateString(),
-      miles: 0,
-      notes: "",
-    });
   };
 
   const handleCancel = () => {
@@ -127,7 +95,7 @@ export default function QuickAddTripForm({
       onCancel?.();
     } else {
       setStep("collapsed");
-      resetForm();
+      form.reset();
     }
   };
 
@@ -168,7 +136,7 @@ export default function QuickAddTripForm({
           Trip Added!
         </h3>
         <p className="text-sm text-ctp-subtext1">
-          {formData.miles} miles to {formData.client_name}
+          {form.data.miles} miles to {form.data.client_name}
         </p>
       </div>
     );
@@ -200,71 +168,41 @@ export default function QuickAddTripForm({
       {/* Client step */}
       {step === "client" && (
         <div className="space-y-4">
-          <div>
-            <label
-              htmlFor="client-name-input"
-              className="block text-sm font-medium text-ctp-text mb-2"
-            >
-              Who did you visit?
-            </label>
-            <div className="relative overflow-visible min-h-[44px]">
-              <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-ctp-subtext1" />
-              <input
-                id="client-name-input"
-                ref={clientInputRef}
-                type="text"
-                value={formData.client_name}
-                onChange={handleClientNameChange}
-                onFocus={handleClientNameFocus}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && formData.client_name.trim()) {
-                    handleClientSubmit(formData.client_name);
-                  }
-                  if (e.key === "Escape") {
-                    setShowClientSuggestions(false);
-                    if (mode === "modal") {
-                      handleCancel();
-                    }
-                  }
-                }}
-                className="w-full pl-10 pr-4 py-3 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent transition-all duration-150"
-                placeholder="Start typing client name..."
-                maxLength={30}
-                aria-describedby="client-suggestions"
-              />
-
-              {/* Enhanced Client Suggestions */}
-              <ClientSuggestions
-                ref={suggestionsRef}
-                clients={clientSuggestions?.clients || []}
-                show={showClientSuggestions}
-                onSelect={handleClientSelect}
-                isLoading={false}
-                query={formData.client_name}
-                maxItems={3}
-                noResultsMessage="No clients found - create a new one!"
-                positionUp={mode === "modal"}
-              />
-            </div>
+          <div
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && form.data.client_name.trim()) {
+                handleClientSubmit(form.data.client_name);
+              }
+              if (e.key === "Escape" && mode === "modal") {
+                handleCancel();
+              }
+            }}
+          >
+            <ClientNameField
+              form={form}
+              fieldName="client_name"
+              label="Who did you visit?"
+              placeholder="Start typing client name..."
+              ref={clientInputRef}
+              id="client-name-input"
+              positionUp={mode === "modal"}
+            />
           </div>
 
           <div className="flex gap-2">
-            <button
-              onClick={handleCancel}
-              className="flex-1 py-2 px-4 text-ctp-subtext1 hover:text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:outline-none rounded-lg"
-            >
+            <Button onClick={handleCancel} variant="ghost" className="flex-1">
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() =>
-                formData.client_name.trim() &&
-                handleClientSubmit(formData.client_name)
+                form.data.client_name.trim() &&
+                handleClientSubmit(form.data.client_name)
               }
-              disabled={!formData.client_name.trim()}
-              className="flex-1 bg-ctp-blue hover:bg-ctp-blue/90 disabled:bg-ctp-blue/30 text-white py-2 px-4 rounded-lg font-medium focus:ring-2 focus:ring-ctp-blue focus:ring-offset-2 focus:outline-none"
+              disabled={!form.data.client_name.trim()}
+              className="flex-1"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -275,7 +213,7 @@ export default function QuickAddTripForm({
           <div className="bg-ctp-base rounded-lg p-3 flex items-center gap-2">
             <UserIcon className="h-4 w-4 text-ctp-blue" />
             <span className="text-ctp-text font-medium">
-              {formData.client_name}
+              {form.data.client_name}
             </span>
             <button
               onClick={handleBack}
@@ -285,118 +223,82 @@ export default function QuickAddTripForm({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="miles-input"
-                className="block text-sm font-medium text-ctp-text mb-2"
-              >
-                Miles
-              </label>
-              <div className="relative">
-                <TruckIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-ctp-subtext1" />
-                <input
-                  id="miles-input"
-                  ref={milesInputRef}
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  inputMode="decimal"
-                  value={formData.miles || ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      miles: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && formData.miles > 0) {
-                      handleSubmit();
-                    }
-                    if (e.key === "Escape" && mode === "modal") {
-                      handleCancel();
-                    }
-                  }}
-                  className="w-full pl-10 pr-4 py-3 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
-                  placeholder="0.0"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="date-input"
-                className="block text-sm font-medium text-ctp-text mb-2"
-              >
-                Date
-              </label>
-              <input
-                id="date-input"
-                type="date"
-                value={formData.trip_date}
-                onChange={(e) =>
-                  setFormData({ ...formData, trip_date: e.target.value })
-                }
-                className="w-full px-3 py-3 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text focus:ring-2 focus:ring-ctp-blue focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="notes-input"
-              className="block text-sm font-medium text-ctp-text mb-2"
-            >
-              Notes (optional)
-            </label>
-            <textarea
-              id="notes-input"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
+          <div
+            className="grid grid-cols-2 gap-4"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && form.data.miles > 0) {
+                handleSubmit();
               }
-              onKeyDown={(e) => {
-                if (e.key === "Escape" && mode === "modal") {
-                  handleCancel();
-                }
-              }}
-              className="w-full px-3 py-2 border border-ctp-surface1 rounded-lg bg-ctp-base text-ctp-text placeholder-ctp-subtext0 focus:ring-2 focus:ring-ctp-blue focus:border-transparent resize-none"
-              placeholder="Trip purpose, meeting notes..."
-              rows={2}
+              if (e.key === "Escape" && mode === "modal") {
+                handleCancel();
+              }
+            }}
+          >
+            <MilesField
+              form={form}
+              fieldName="miles"
+              label="Miles"
+              ref={milesInputRef}
+              id="miles-input"
+            />
+
+            <DateField
+              form={form}
+              fieldName="trip_date"
+              label="Date"
+              id="date-input"
             />
           </div>
 
+          <div
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && mode === "modal") {
+                handleCancel();
+              }
+            }}
+          >
+            <NotesField
+              form={form}
+              fieldName="notes"
+              placeholder="Trip purpose, meeting notes..."
+              rows={2}
+              id="notes-input"
+            />
+          </div>
+
+          {/* Error Display */}
+          {createTripMutation.isError && (
+            <div className="p-3 bg-ctp-red/10 border border-ctp-red rounded-lg">
+              <p className="text-ctp-red text-sm">
+                {getApiErrorMessage(createTripMutation.error)}
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-2">
-            <button
-              onClick={handleBack}
-              className="flex-1 py-3 px-4 text-ctp-subtext1 hover:text-ctp-text font-medium focus:ring-2 focus:ring-ctp-blue focus:outline-none rounded-lg"
-            >
+            <Button onClick={handleBack} variant="ghost" className="flex-1">
               Back
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSubmit}
               disabled={
-                !formData.miles ||
-                formData.miles <= 0 ||
+                !form.data.miles ||
+                form.data.miles <= 0 ||
+                form.isSubmitting ||
                 createTripMutation.isPending
               }
-              className="flex-1 bg-ctp-blue hover:bg-ctp-blue/90 disabled:bg-ctp-blue/30 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 focus:ring-2 focus:ring-ctp-blue focus:ring-offset-2 focus:outline-none"
-              aria-describedby={
-                createTripMutation.isPending ? "loading-status" : undefined
+              loading={form.isSubmitting || createTripMutation.isPending}
+              icon={
+                !(form.isSubmitting || createTripMutation.isPending)
+                  ? PlusIcon
+                  : undefined
               }
+              className="flex-1"
             >
-              {createTripMutation.isPending ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  <span id="loading-status" className="sr-only">
-                    Adding trip...
-                  </span>
-                </>
-              ) : (
-                <PlusIcon className="h-4 w-4" />
-              )}
-              Add Trip
-            </button>
+              {form.isSubmitting || createTripMutation.isPending
+                ? "Adding Trip..."
+                : "Add Trip"}
+            </Button>
           </div>
         </div>
       )}

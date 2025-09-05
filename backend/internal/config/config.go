@@ -9,6 +9,7 @@ type Config struct {
 	Database DatabaseConfig
 	Server   ServerConfig
 	Logger   LoggerConfig
+	App      AppConfig
 }
 
 type DatabaseConfig struct {
@@ -29,6 +30,10 @@ type LoggerConfig struct {
 	Level string
 }
 
+type AppConfig struct {
+	Version string
+}
+
 func Load() *Config {
 	return &Config{
 		Database: DatabaseConfig{
@@ -45,6 +50,9 @@ func Load() *Config {
 		},
 		Logger: LoggerConfig{
 			Level: getEnv("LOG_LEVEL", "debug"),
+		},
+		App: AppConfig{
+			Version: getEnv("APP_VERSION", "development"),
 		},
 	}
 }

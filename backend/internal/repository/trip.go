@@ -3,11 +3,10 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
-	"time"
 
 	"github.com/oscar/mileagetracker/internal/domain"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -61,60 +60,40 @@ func (r *tripRepository) buildFilteredQuery(query *gorm.DB, filters domain.TripF
 }
 
 func (r *tripRepository) Create(ctx context.Context, trip *domain.Trip) error {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 50*time.Millisecond {
-			log.Printf("[SLOW_QUERY] Create trip took %v", duration)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpCreate, "trip")()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpCreate))
 	defer cancel()
 
 	return r.db.WithContext(ctxWithTimeout).Create(trip).Error
 }
 
 func (r *tripRepository) Update(ctx context.Context, trip *domain.Trip) error {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 50*time.Millisecond {
-			log.Printf("[SLOW_QUERY] Update trip took %v", duration)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpUpdate, "trip")()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpUpdate))
 	defer cancel()
 
 	return r.db.WithContext(ctxWithTimeout).Save(trip).Error
 }
 
 func (r *tripRepository) Delete(ctx context.Context, id uint) error {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 50*time.Millisecond {
-			log.Printf("[SLOW_QUERY] Delete trip took %v (id=%d)", duration, id)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpDelete, "trip", zap.Uint("id", id))()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpDelete))
 	defer cancel()
 
 	return r.db.WithContext(ctxWithTimeout).Delete(&domain.Trip{}, id).Error
 }
 
 func (r *tripRepository) FindByID(ctx context.Context, id uint) (*domain.Trip, error) {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 30*time.Millisecond {
-			log.Printf("[SLOW_QUERY] FindByID took %v (id=%d)", duration, id)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpFindByID, "trip", zap.Uint("id", id))()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpFindByID))
 	defer cancel()
 
 	var trip domain.Trip
@@ -126,13 +105,8 @@ func (r *tripRepository) FindByID(ctx context.Context, id uint) (*domain.Trip, e
 }
 
 func (r *tripRepository) GetPaginated(ctx context.Context, page, limit int, filters domain.TripFilters) ([]domain.Trip, int64, error) {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 100*time.Millisecond {
-			log.Printf("[SLOW_QUERY] GetPaginated took %v (page=%d, limit=%d)", duration, page, limit)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpGetPaginated, "trip", zap.Int("page", page), zap.Int("limit", limit))()
 
 	var trips []domain.Trip
 	var total int64
@@ -140,7 +114,7 @@ func (r *tripRepository) GetPaginated(ctx context.Context, page, limit int, filt
 	offset := (page - 1) * limit
 
 	// Add query timeout
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpGetPaginated))
 	defer cancel()
 
 	// Start with base query
@@ -182,18 +156,13 @@ func (r *tripRepository) GetPaginated(ctx context.Context, page, limit int, filt
 }
 
 func (r *tripRepository) GetMonthlySummary(ctx context.Context, startDate, endDate string) ([]domain.MonthlySummary, error) {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 200*time.Millisecond {
-			log.Printf("[SLOW_QUERY] GetMonthlySummary took %v (start=%s, end=%s)", duration, startDate, endDate)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpGetMonthlySummary, "trip", zap.String("start_date", startDate), zap.String("end_date", endDate))()
 
 	var results []domain.MonthlySummary
 
 	// Add query timeout for aggregation queries
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpGetMonthlySummary))
 	defer cancel()
 
 	// Optimized query that works with both PostgreSQL and SQLite

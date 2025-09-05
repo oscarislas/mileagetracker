@@ -7,38 +7,24 @@ import (
 	"time"
 
 	"github.com/oscar/mileagetracker/internal/domain"
+	"github.com/oscar/mileagetracker/internal/testutils"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
-func setupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
-	assert.NoError(t, err)
-
-	// Migrate the schema
-	err = db.AutoMigrate(&domain.Trip{}, &domain.Client{})
-	assert.NoError(t, err)
-
-	return db
-}
-
 func TestTripRepository_Create(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	repo := NewTripRepository(db)
 
 	t.Run("should create trip successfully", func(t *testing.T) {
-		trip := &domain.Trip{
-			ClientName: "Test Client",
-			TripDate:   "2025-01-15",
-			Miles:      100.5,
-			Notes:      "Test trip",
-		}
+		trip := testutils.NewTripBuilder().
+			WithClientName("Test Client").
+			WithDate("2025-01-15").
+			WithMiles(100.5).
+			WithNotes("Test trip").
+			Build()
 
-		err := repo.Create(context.Background(), trip)
+		err := repo.Create(context.Background(), &trip)
 
 		assert.NoError(t, err)
 		assert.NotZero(t, trip.ID)
@@ -47,14 +33,14 @@ func TestTripRepository_Create(t *testing.T) {
 	})
 
 	t.Run("should handle empty trip date", func(t *testing.T) {
-		trip := &domain.Trip{
-			ClientName: "Test Client",
-			TripDate:   "",
-			Miles:      50.0,
-			Notes:      "Test trip",
-		}
+		trip := testutils.NewTripBuilder().
+			WithClientName("Test Client").
+			WithDate("").
+			WithMiles(50.0).
+			WithNotes("Test trip").
+			Build()
 
-		err := repo.Create(context.Background(), trip)
+		err := repo.Create(context.Background(), &trip)
 
 		// SQLite allows empty string for date, but this would fail in PostgreSQL
 		// For integration tests, we'd want to use the same DB type as production
@@ -63,28 +49,24 @@ func TestTripRepository_Create(t *testing.T) {
 }
 
 func TestTripRepository_FindByID(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	repo := NewTripRepository(db)
 
 	t.Run("should find trip by ID", func(t *testing.T) {
-		// Create test trip
-		trip := &domain.Trip{
-			ClientName: "Test Client",
-			TripDate:   "2025-01-15",
-			Miles:      75.0,
-			Notes:      "Find test",
-		}
-		err := repo.Create(context.Background(), trip)
-		assert.NoError(t, err)
+		// Create test trip using builder
+		trip := testutils.NewTripBuilder().
+			WithClientName("Test Client").
+			WithDate("2025-01-15").
+			WithMiles(75.0).
+			WithNotes("Find test").
+			Create(t, db)
 
 		// Find the trip
 		found, err := repo.FindByID(context.Background(), trip.ID)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, found)
-		assert.Equal(t, trip.ID, found.ID)
-		assert.Equal(t, trip.ClientName, found.ClientName)
-		assert.Equal(t, trip.Miles, found.Miles)
+		testutils.AssertTripsEqual(t, *trip, *found)
 	})
 
 	t.Run("should return error for non-existent trip", func(t *testing.T) {
@@ -97,7 +79,7 @@ func TestTripRepository_FindByID(t *testing.T) {
 }
 
 func TestTripRepository_Update(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	repo := NewTripRepository(db)
 
 	t.Run("should update trip successfully", func(t *testing.T) {
@@ -129,7 +111,7 @@ func TestTripRepository_Update(t *testing.T) {
 }
 
 func TestTripRepository_Delete(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	repo := NewTripRepository(db)
 
 	t.Run("should delete trip successfully", func(t *testing.T) {
@@ -162,7 +144,7 @@ func TestTripRepository_Delete(t *testing.T) {
 }
 
 func TestTripRepository_GetPaginated(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	repo := NewTripRepository(db)
 
 	// Create test data
@@ -221,7 +203,7 @@ func TestTripRepository_GetPaginated(t *testing.T) {
 }
 
 func TestTripRepository_GetMonthlySummary(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	repo := NewTripRepository(db)
 
 	// For SQLite tests, we skip the monthly summary as it uses PostgreSQL-specific syntax
@@ -254,7 +236,7 @@ func TestTripRepository_GetMonthlySummary(t *testing.T) {
 }
 
 func TestTripRepository_GetPaginated_WithFilters(t *testing.T) {
-	db := setupTestDB(t)
+	db := testutils.SetupTestDB(t)
 	repo := NewTripRepository(db)
 
 	// Create diverse test data

@@ -2,10 +2,10 @@ package repository
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/oscar/mileagetracker/internal/domain"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -24,15 +24,10 @@ func NewSettingsRepository(db *gorm.DB) SettingsRepository {
 }
 
 func (r *settingsRepository) GetByKey(ctx context.Context, key string) (*domain.Settings, error) {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 20*time.Millisecond {
-			log.Printf("[SLOW_QUERY] GetByKey took %v (key=%s)", duration, key)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpGetByKey, "settings", zap.String("key", key))()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 1*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpGetByKey))
 	defer cancel()
 
 	var settings domain.Settings
@@ -45,15 +40,10 @@ func (r *settingsRepository) GetByKey(ctx context.Context, key string) (*domain.
 }
 
 func (r *settingsRepository) UpdateByKey(ctx context.Context, key, value string) error {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 100*time.Millisecond {
-			log.Printf("[SLOW_QUERY] UpdateByKey took %v (key=%s)", duration, key)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpUpdateByKey, "settings", zap.String("key", key))()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpUpdateByKey))
 	defer cancel()
 
 	// Update with current timestamp
@@ -68,15 +58,10 @@ func (r *settingsRepository) UpdateByKey(ctx context.Context, key, value string)
 }
 
 func (r *settingsRepository) GetAll(ctx context.Context) ([]domain.Settings, error) {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 50*time.Millisecond {
-			log.Printf("[SLOW_QUERY] GetAll settings took %v", duration)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpGetAll, "settings")()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpGetAll))
 	defer cancel()
 
 	var settings []domain.Settings

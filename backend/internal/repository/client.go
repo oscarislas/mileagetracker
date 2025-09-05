@@ -2,11 +2,10 @@ package repository
 
 import (
 	"context"
-	"log"
 	"strings"
-	"time"
 
 	"github.com/oscar/mileagetracker/internal/domain"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -25,30 +24,20 @@ func NewClientRepository(db *gorm.DB) ClientRepository {
 }
 
 func (r *clientRepository) Create(ctx context.Context, client *domain.Client) error {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 50*time.Millisecond {
-			log.Printf("[SLOW_QUERY] Create client took %v", duration)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpCreate, "client")()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpCreate))
 	defer cancel()
 
 	return r.db.WithContext(ctxWithTimeout).Create(client).Error
 }
 
 func (r *clientRepository) FindByName(ctx context.Context, name string) (*domain.Client, error) {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 30*time.Millisecond {
-			log.Printf("[SLOW_QUERY] FindByName took %v (name=%s)", duration, name)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpFindByName, "client", zap.String("name", name))()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpFindByName))
 	defer cancel()
 
 	var client domain.Client
@@ -61,15 +50,10 @@ func (r *clientRepository) FindByName(ctx context.Context, name string) (*domain
 }
 
 func (r *clientRepository) GetSuggestions(ctx context.Context, query string, limit int) ([]domain.Client, error) {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		if duration > 100*time.Millisecond {
-			log.Printf("[SLOW_QUERY] GetSuggestions took %v (query=%s, limit=%d)", duration, query, limit)
-		}
-	}()
+	monitor := GetQueryPerformanceMonitor()
+	defer monitor.MonitorQuery(OpGetSuggestions, "client", zap.String("query", query), zap.Int("limit", limit))()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctxWithTimeout, cancel := WithTimeout(ctx, GetTimeoutForOperation(OpGetSuggestions))
 	defer cancel()
 
 	var clients []domain.Client

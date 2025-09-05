@@ -34,7 +34,7 @@ func main() {
 	}
 	defer logger.Sync()
 
-	logger.Info("Starting Mileage Tracker API", zap.String("version", "1.0.0"))
+	logger.Info("Starting Mileage Tracker API", zap.String("version", cfg.App.Version))
 
 	// Initialize database
 	if err := database.Init(&cfg.Database); err != nil {
@@ -67,6 +67,7 @@ func main() {
 	clientHandler := client.NewHandler(clientService)
 	tripHandler := trip.NewHandler(tripService)
 	settingsHandler := settings.NewHandler(settingsService)
+	healthHandler := health.NewHandler(cfg.App.Version)
 
 	gin.SetMode(cfg.Server.Mode)
 	router := gin.New()
@@ -75,7 +76,7 @@ func main() {
 	router.Use(middleware.Logger())
 	router.Use(middleware.CORS())
 
-	setupRoutes(router, clientHandler, tripHandler, settingsHandler)
+	setupRoutes(router, clientHandler, tripHandler, settingsHandler, healthHandler)
 
 	server := &http.Server{
 		Addr:         ":" + strconv.Itoa(cfg.Server.Port),
@@ -110,9 +111,9 @@ func main() {
 	logger.Info("Server exited")
 }
 
-func setupRoutes(router *gin.Engine, clientHandler *client.Handler, tripHandler *trip.Handler, settingsHandler *settings.Handler) {
-	router.GET("/health", health.HealthHandler)
-	router.GET("/ready", health.ReadinessHandler)
+func setupRoutes(router *gin.Engine, clientHandler *client.Handler, tripHandler *trip.Handler, settingsHandler *settings.Handler, healthHandler *health.Handler) {
+	router.GET("/health", healthHandler.HealthHandler)
+	router.GET("/ready", healthHandler.ReadinessHandler)
 
 	v1 := router.Group("/api/v1")
 	{

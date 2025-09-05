@@ -152,9 +152,15 @@ tmp/
 
 # Claude Code configuration
 CLAUDE.md
-.claude/
 
-# Playwright test results
+# Test artifacts and results (organized in test-artifacts/)
+test-artifacts/
 test-results/
 playwright-report/
 .last-run.json
+
+# Additional test files that may be generated
+*.test.db
+*_test.db
+test_*.sqlite
+test_*.sqlite3

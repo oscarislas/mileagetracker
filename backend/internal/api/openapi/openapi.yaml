@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Mileage Tracker API
   description: API for tracking vehicle mileage and expenses for tax deductions
-  version: 1.0.0
+  version: 1.1.0
   contact:
     name: API Support
     email: support@mileagetracker.com

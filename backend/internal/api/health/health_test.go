@@ -14,8 +14,14 @@ func setupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
 
-	router.GET("/health", HealthHandler)
-	router.GET("/ready", ReadinessHandler)
+	// Test with versioned handler
+	healthHandler := NewHandler("test-version-1.0.0")
+	router.GET("/health", healthHandler.HealthHandler)
+	router.GET("/ready", healthHandler.ReadinessHandler)
+
+	// Also test legacy handlers
+	router.GET("/health-legacy", HealthHandler)
+	router.GET("/ready-legacy", ReadinessHandler)
 
 	return router
 }
@@ -36,6 +42,7 @@ func TestHealthHandler(t *testing.T) {
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
 		assert.Equal(t, "healthy", response.Status)
+		assert.Equal(t, "test-version-1.0.0", response.Version)
 	})
 
 	t.Run("should handle multiple simultaneous health checks", func(t *testing.T) {
@@ -61,6 +68,7 @@ func TestHealthHandler(t *testing.T) {
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			assert.NoError(t, err)
 			assert.Equal(t, "healthy", response.Status)
+			assert.Equal(t, "test-version-1.0.0", response.Version)
 		}
 	})
 
@@ -82,6 +90,10 @@ func TestHealthHandler(t *testing.T) {
 		status, exists := response["status"]
 		assert.True(t, exists)
 		assert.Equal(t, "healthy", status)
+
+		version, versionExists := response["version"]
+		assert.True(t, versionExists)
+		assert.Equal(t, "test-version-1.0.0", version)
 	})
 
 	t.Run("should handle OPTIONS request", func(t *testing.T) {
@@ -124,6 +136,7 @@ func TestReadinessHandler(t *testing.T) {
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
 		assert.Equal(t, "ready", response.Status)
+		assert.Equal(t, "test-version-1.0.0", response.Version)
 		assert.NotNil(t, response.Services)
 	})
 
@@ -139,6 +152,7 @@ func TestReadinessHandler(t *testing.T) {
 		var response ReadinessResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
+		assert.Equal(t, "test-version-1.0.0", response.Version)
 
 		// Check database service is included
 		dbStatus, exists := response.Services["database"]
@@ -169,6 +183,7 @@ func TestReadinessHandler(t *testing.T) {
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			assert.NoError(t, err)
 			assert.Equal(t, "ready", response.Status)
+			assert.Equal(t, "test-version-1.0.0", response.Version)
 			assert.Contains(t, response.Services, "database")
 		}
 	})
@@ -191,6 +206,10 @@ func TestReadinessHandler(t *testing.T) {
 		status, statusExists := response["status"]
 		assert.True(t, statusExists)
 		assert.Equal(t, "ready", status)
+
+		version, versionExists := response["version"]
+		assert.True(t, versionExists)
+		assert.Equal(t, "test-version-1.0.0", version)
 
 		services, servicesExist := response["services"]
 		assert.True(t, servicesExist)
@@ -219,6 +238,7 @@ func TestReadinessHandler(t *testing.T) {
 		var response ReadinessResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
+		assert.Equal(t, "test-version-1.0.0", response.Version)
 
 		// Validate services structure
 		assert.IsType(t, map[string]string{}, response.Services)
@@ -246,12 +266,14 @@ func TestReadinessHandler(t *testing.T) {
 			var response ReadinessResponse
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			assert.NoError(t, err)
+			assert.Equal(t, "test-version-1.0.0", response.Version)
 			responses = append(responses, response)
 		}
 
 		// All responses should be identical
 		for i := 1; i < len(responses); i++ {
 			assert.Equal(t, responses[0].Status, responses[i].Status)
+			assert.Equal(t, responses[0].Version, responses[i].Version)
 			assert.Equal(t, responses[0].Services, responses[i].Services)
 		}
 	})
@@ -297,5 +319,80 @@ func TestHealthAndReadinessHandlers_Integration(t *testing.T) {
 		assert.NotEqual(t, healthResponse.Status, readyResponse.Status)
 		assert.Equal(t, "healthy", healthResponse.Status)
 		assert.Equal(t, "ready", readyResponse.Status)
+	})
+}
+
+func TestHealthHandlerStructure(t *testing.T) {
+	t.Run("NewHandler should create handler with correct version", func(t *testing.T) {
+		version := "v2.1.0"
+		handler := NewHandler(version)
+		assert.NotNil(t, handler)
+		assert.Equal(t, version, handler.version)
+	})
+
+	t.Run("Handler methods should return correct version", func(t *testing.T) {
+		version := "v3.0.0-beta"
+		handler := NewHandler(version)
+
+		gin.SetMode(gin.TestMode)
+		router := gin.New()
+		router.GET("/health", handler.HealthHandler)
+		router.GET("/ready", handler.ReadinessHandler)
+
+		// Test health endpoint
+		healthReq, _ := http.NewRequest("GET", "/health", nil)
+		healthW := httptest.NewRecorder()
+		router.ServeHTTP(healthW, healthReq)
+
+		var healthResponse HealthResponse
+		err := json.Unmarshal(healthW.Body.Bytes(), &healthResponse)
+		assert.NoError(t, err)
+		assert.Equal(t, version, healthResponse.Version)
+
+		// Test readiness endpoint
+		readyReq, _ := http.NewRequest("GET", "/ready", nil)
+		readyW := httptest.NewRecorder()
+		router.ServeHTTP(readyW, readyReq)
+
+		var readyResponse ReadinessResponse
+		err = json.Unmarshal(readyW.Body.Bytes(), &readyResponse)
+		assert.NoError(t, err)
+		assert.Equal(t, version, readyResponse.Version)
+	})
+}
+
+func TestLegacyHandlers(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.GET("/health-legacy", HealthHandler)
+	router.GET("/ready-legacy", ReadinessHandler)
+
+	t.Run("legacy health handler should return unknown version", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/health-legacy", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response HealthResponse
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "healthy", response.Status)
+		assert.Equal(t, "unknown", response.Version)
+	})
+
+	t.Run("legacy readiness handler should return unknown version", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/ready-legacy", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response ReadinessResponse
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, "ready", response.Status)
+		assert.Equal(t, "unknown", response.Version)
+		assert.Contains(t, response.Services, "database")
 	})
 }
